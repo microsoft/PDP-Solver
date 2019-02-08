@@ -1,0 +1,54 @@
+model_name: "p-prodec2-nsp-cnf-3-10-pytorch"
+model_type: "p-nd-np"
+version: "2.0"
+continuous_train: false
+cache_data: false
+has_meta_data: true
+train_path: ["../../datasets/SAT/p-cnf-3-10-large.json"]
+validation_path: ["../../datasets/SAT/cnf-10.json"]
+test_path: [["../../datasets/SAT/cnf-gc-6-10-test.json"],
+            ["../../datasets/SAT/cnf-10.json"],
+            ["../../datasets/SAT/cnf-20.json"],
+            ["../../datasets/SAT/cnf-40.json"],
+            ["../../datasets/SAT/cnf-60.json"],
+            ["../../datasets/SAT/cnf-80.json"]]
+model_path: "../../Trained-models/SAT"
+repetition_num: 1
+train_epoch_size: 200000
+test_epoch_size: 40000
+epoch_num: 500
+label_dim: 1
+edge_feature_dim: 1
+meta_feature_dim: 1
+error_dim: 3
+metric_index: 0
+prediction_dim: 1
+hidden_dim: 150  # 110
+mem_hidden_dim: 50
+agg_hidden_dim: 50  # 135
+mem_agg_hidden_dim: 50  # 50
+classifier_dim: 50 # 30  # 100
+batch_size: 5000
+batch_expansion: 1
+learning_rate: 0.0001
+exploration: 0.1
+verbose: true
+randomized: true
+train_inner_recurrence_num: 1
+train_outer_recurrence_num: 10
+test_recurrence_num: 20
+max_cache_size: 100000
+dropout: 0.2
+clip_norm: 0.65
+weight_decay: 0.0000000001
+loss_sharpness: 5
+train_batch_limit: 4704000  # 400 * 84 * 140
+test_batch_limit: 4704000  # 400 * 84 * 140
+min_n: 10
+max_n: 100
+min_alpha: 2
+max_alpha: 10
+min_k: 2
+max_k: 10
+local_search_iteration: 10
+epsilon: 0.05
