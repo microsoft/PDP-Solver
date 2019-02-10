@@ -1,4 +1,7 @@
-"Input pipeline for topsort DAG data"
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE.md file in the project root for full license information.
+
+# factor_graph_input_pipeline.py : Defines the input pipeline for the PDP framework.
 
 import linecache, json
 import collections
@@ -12,6 +15,8 @@ from os.path import isfile, join
 
 
 class DynamicBatchDivider(object):
+    "Implements the dynamic batching process."
+
     def __init__(self, limit, hidden_dim):
         self.limit = limit
         self.hidden_dim = hidden_dim
@@ -65,45 +70,12 @@ class DynamicBatchDivider(object):
 
         return variable_num_list, function_num_list, graph_map_list, edge_feature_list, graph_feature_list, label_list
 
-    # def divide(self, graph, node, label, pred, pred_length, edge_count):
-    #     batch_size = len(node)
-    #     length = [n.size()[0] for n in node]
-    #     indices = sorted(range(len(length)), reverse=True, key=lambda k: length[k])
-    #     sorted_length = sorted(length, reverse=True)
-    #     length_cum_sum = np.cumsum(sorted_length)
 
-    #     graph_list = []
-    #     node_list = []
-    #     label_list = []
-    #     pred_list = []
-    #     pred_length_list = []
-    #     edge_count_list = []
-
-    #     i = 0
-    #     value = self.limit // self.hidden_dim
-
-    #     while i < batch_size:
-    #         k = np.searchsorted(length_cum_sum, value, side='right')
-    #         ind = indices[i:min(k, batch_size)]
-
-    #         if graph[0] is None:
-    #             graph_list += [[None]]
-    #         else:
-    #             graph_list += [[graph[j] for j in ind]]
-
-    #         node_list += [[node[j] for j in ind]]
-    #         label_list += [[label[j] for j in ind]]
-    #         pred_list += [[pred[j] for j in ind]]
-    #         pred_length_list += [[pred_length[j] for j in ind]]
-    #         edge_count_list += [[edge_count[j] for j in ind]]
-
-    #         i = k
-    #         value = length_cum_sum[min(k - 1, batch_size)] + self.limit // self.hidden_dim
-
-    #     return graph_list, node_list, label_list, pred_list, pred_length_list, edge_count_list
+###############################################################
 
 
 class FactorGraphDataset(data.Dataset):
+    "Implements a PyTorch Dataset class for reading and parsing CNFs in the JSON format from disk."
 
     # batch_divider = DynamicBatchDivider(3000000, 100)
     # batch_divider = DynamicBatchDivider(3500000, 100)
@@ -158,9 +130,7 @@ class FactorGraphDataset(data.Dataset):
         graph_map = np.stack((variable_ind, function_ind))
         alpha = float(function_num) / variable_num
 
-        # return (variable_num, function_num, graph_map, edge_feature, [alpha], float(input_data[3]))
         return (variable_num, function_num, graph_map, edge_feature, None, float(input_data[3]))
-
 
     @staticmethod
     def dag_collate_fn(input_data):

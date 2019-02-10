@@ -1,9 +1,12 @@
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE.md file in the project root for full license information.
+
+# factor_graph_trainer.py : Defines the trainer base class for the PDP framework.
+
 import os
 import time
 import math
 import multiprocessing
-
-# import gc
 
 import numpy as np
 
@@ -37,9 +40,8 @@ class FactorGraphTrainerBase:
 
         self._error_dim = error_dim
         self._num_cores = multiprocessing.cpu_count()
-        self._loss = loss  # .to(self._device)
-        self._evaluator = evaluator  # .to(self._device)
-        # self._global_step = torch.zeros(1, dtype=torch.float, device=self._device)
+        self._loss = loss
+        self._evaluator = evaluator
 
         if config['verbose']:
             print("The number of CPU cores is", self._num_cores)
@@ -50,32 +52,46 @@ class FactorGraphTrainerBase:
         self._model_list = [self._set_device(model) for model in self._build_graph(self._config)]
 
     def _build_graph(self, config):
+        "Builds the forward computational graph."
+        
         raise NotImplementedError("Subclass must implement abstract method")
 
     # pylint: disable=unused-argument
     def _compute_loss(self, model, loss, prediction, label, graph_map, batch_variable_map, 
         batch_function_map, edge_feature, meta_data):
+        "Computes the loss function."
+        
         return loss(prediction, label)
 
     # pylint: disable=unused-argument
     def _compute_evaluation_metrics(self, model, evaluator, prediction, label, graph_map, 
         batch_variable_map, batch_function_map, edge_feature, meta_data):
+        "Computes the evaluation function."
+        
         return evaluator(prediction, label)
 
     def _load(self, import_path_base):
+        "Loads the model(s) from file."
+        
         for model in self._model_list:
             _module(model).load(import_path_base)
 
     def _save(self, export_path_base):
+        "Saves the model(s) to file."
+
         for model in self._model_list:
             _module(model).save(export_path_base)
 
     def _reset_global_step(self):
+        "Resets the global step counter."
+        
         for model in self._model_list:
             _module(model)._global_step.data = torch.tensor(
                 [0], dtype=torch.float, device=self._device)
 
     def _set_device(self, model):
+        "Sets the CPU/GPU device."
+
         if self._use_cuda:
             return nn.DataParallel(model).cuda(self._device)
         return model.cpu()
@@ -86,7 +102,7 @@ class FactorGraphTrainerBase:
         return data
 
     def get_parameter_list(self):
-        "Return list of dictionaries with models' parameters."
+        "Returns list of dictionaries with models' parameters."
         return [{'params': filter(lambda p: p.requires_grad, model.parameters())}
                 for model in self._model_list]
 
@@ -94,7 +110,6 @@ class FactorGraphTrainerBase:
 
         train_batch_num = math.ceil(len(train_loader.dataset) / self._config['batch_size'])
 
-        # total_loss = torch.zeros(model_num, dtype=torch.float32, device=self._device)
         total_loss = np.zeros(len(self._model_list), dtype=np.float32)
         total_example_num = 0
 
@@ -197,7 +212,7 @@ class FactorGraphTrainerBase:
                 # if self._use_cuda:
                 #     torch.cuda.empty_cache()
 
-        return error / total_example_num  # max(1, len(validation_loader))
+        return error / total_example_num
 
     def _test_batch(self, error, graph_map, batch_variable_map, batch_function_map, 
                     edge_feature, graph_feat, label, batch_replication):
@@ -234,10 +249,6 @@ class FactorGraphTrainerBase:
 
         with torch.no_grad():
 
-            # error = torch.zeros(
-            #     self._error_dim, model_num,
-            #     dtype=torch.float32, device=self._device)
-
             for (j, data) in enumerate(validation_loader, 1):
                 segment_num = len(data[0])
 
@@ -260,8 +271,6 @@ class FactorGraphTrainerBase:
                 if self._config['verbose']:
                     print("Predicting epoch: %3d%% complete..."
                           % (j * 100.0 / test_batch_num), end='\r')
-                # if self._use_cuda:
-                #     torch.cuda.empty_cache()
 
     def _predict_batch(self, graph_map, batch_variable_map, batch_function_map, 
         edge_feature, graph_feat, label, post_processor, file_stream, batch_replication):
@@ -296,12 +305,13 @@ class FactorGraphTrainerBase:
                 del s
 
     def _check_recurrence_termination(self, active, prediction, sat_problem):
+        "De-actives the CNF examples which the model has already found a SAT solution for."
         pass
 
     def train(self, train_list, validation_list, optimizer, last_export_path_base=None,
               best_export_path_base=None, metric_index=0, load_model=None, reset_step=False,
               generator=None, train_epoch_size=0):
-        "Train the model."
+        "Trains the PDP model."
 
         # Build the input pipeline
         train_loader = input_pipeline.FactorGraphDataset.get_loader(
@@ -317,24 +327,14 @@ class FactorGraphTrainerBase:
 
         model_num = len(self._model_list)
 
-        # errors = torch.zeros(
-        #     self._error_dim, model_num, self._config['epoch_num'],
-        #     self._config['repetition_num'],
-        #     dtype=torch.float32, requires_grad=False, device=self._device)
-
         errors = np.zeros(
             (self._error_dim, model_num, self._config['epoch_num'],
              self._config['repetition_num']), dtype=np.float32)
-
-        # losses = torch.zeros(
-        #     model_num, self._config['epoch_num'], self._config['repetition_num'],
-        #     dtype=torch.float32, requires_grad=False, device=self._device)
 
         losses = np.zeros(
             (model_num, self._config['epoch_num'], self._config['repetition_num']),
             dtype=np.float32)
 
-        # best_errors = torch.from_numpy(np.repeat(np.inf, model_num)).float().to(self._device)
         best_errors = np.repeat(np.inf, model_num)
 
         if self._use_cuda:
@@ -389,9 +389,6 @@ class FactorGraphTrainerBase:
                     print('Rep {:2d}, Epoch {:2d}: {:s}'.format(rep + 1, epoch + 1, message))
                     print('Time spent: %s seconds' % duration)
 
-        # losses = losses.detach().cpu().numpy()
-        # errors = errors.detach().cpu().numpy()
-
         if self._use_cuda:
             torch.backends.cudnn.benchmark = False
 
@@ -407,6 +404,7 @@ class FactorGraphTrainerBase:
         return self._model_list, errors, losses
 
     def test(self, test_list, import_path_base=None, batch_replication=1):
+        "Tests the PDP model and generates test stats."
 
         if isinstance(test_list, list):
             test_files = test_list
@@ -451,6 +449,7 @@ class FactorGraphTrainerBase:
         return result
 
     def predict(self, test_list, import_path_base=None, post_processor=None, batch_replication=1):
+        "Produces predictions for the trained PDP model."
 
         # Build the input pipeline
         test_loader = input_pipeline.FactorGraphDataset.get_loader(

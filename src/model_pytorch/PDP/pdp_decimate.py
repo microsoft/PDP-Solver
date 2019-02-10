@@ -1,3 +1,8 @@
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE.md file in the project root for full license information.
+
+# pdp_decimate.py : Defines various decimators for the PDP framework.
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -11,6 +16,7 @@ from model_pytorch.PDP import util
 
 
 class NeuralDecimator(nn.Module):
+    "Implements a neural decimator."
 
     def __init__(self, device, message_dimension, meta_data_dimension, hidden_dimension, mem_hidden_dimension,
                  mem_agg_hidden_dimension, agg_hidden_dimension, edge_dimension, dropout):
@@ -95,6 +101,7 @@ class NeuralDecimator(nn.Module):
 
 
 class SequentialDecimator(nn.Module):
+    "Implements the general (greedy) sequential decimator."
 
     def __init__(self, device, message_dimension, scorer, tolerance, t_max):
         super(SequentialDecimator, self).__init__()
@@ -121,31 +128,13 @@ class SequentialDecimator(nn.Module):
             survey = util.sparse_max(survey.squeeze(1), sat_problem._batch_mask_tuple[0], self._device).unsqueeze(1)
 
             active_mask[survey <= 1e-10] = 0
-            # print(active_mask.float().sum().item())
 
         if self._previous_function_state is not None and sat_problem._active_variables.sum() > 0:
             function_diff = (self._previous_function_state - message_state[1][:, 0]).abs().unsqueeze(1)
 
-            # if sat_problem._edge_mask is not None:
-            #     function_diff = function_diff * sat_problem._edge_mask
-            #     all_ones = sat_problem._edge_mask
-            # else:
-            #     all_ones = torch.ones(edge_num, 1, device=self._device)
-
-            # sum_diff = torch.mm(sat_problem._graph_mask_tuple[0], function_diff)
-            # sum_diff = sum_diff * sat_problem._active_variables
-            # sum_diff = torch.mm(sat_problem._batch_mask_tuple[1], sum_diff)
-
-            # sum_edges = torch.mm(sat_problem._graph_mask_tuple[0], all_ones)
-            # sum_edges = sum_edges * sat_problem._active_variables
-            # sum_edges = torch.mm(sat_problem._batch_mask_tuple[1], sum_edges)
-
-            # sum_diff = sum_diff / torch.max(sum_edges, self._constant)
-
             if sat_problem._edge_mask is not None:
                 function_diff = function_diff * sat_problem._edge_mask
 
-            # sum_diff = util.sparse_max(function_diff.squeeze(1), sat_problem._graph_mask_tuple[1], self._device)
             sum_diff = util.sparse_smooth_max(function_diff, sat_problem._graph_mask_tuple[0], self._device)
             sum_diff = sum_diff * sat_problem._active_variables
             sum_diff = util.sparse_max(sum_diff.squeeze(1), sat_problem._batch_mask_tuple[0], self._device).unsqueeze(1)
@@ -159,16 +148,6 @@ class SequentialDecimator(nn.Module):
 
             if sum_diff.sum() > 0:
                 score, _ = self._scorer(message_state, sat_problem)
-
-                # # Find the variable index with max score for each instance in the batch
-                # coeff = (30 * score).abs().exp() * sat_problem._active_variables * sum_diff
-
-                # if coeff.sum() > 0:
-                #     norm = torch.mm(sat_problem._batch_mask_tuple[1], coeff)
-                #     normalization = torch.mm(sat_problem._batch_mask_tuple[0], norm)
-
-                #     coeff = coeff * torch.arange(sat_problem._variable_num, device=self._device).unsqueeze(1) / torch.max(normalization, torch.ones(1, device=self._device))
-                #     max_ind = torch.mm(sat_problem._batch_mask_tuple[1], coeff).squeeze(1).round().long()
 
                 # Find the variable index with max score for each instance in the batch
                 coeff = score.abs() * sat_problem._active_variables * sum_diff
@@ -186,7 +165,6 @@ class SequentialDecimator(nn.Module):
                         assignment = torch.zeros(sat_problem._variable_num, 1, device=self._device)
                         assignment[max_ind, 0] = score.sign()[max_ind, 0]
 
-                        # print(max_ind.size())
                         sat_problem.set_variables(assignment)
 
             self._counters = self._counters + 1
@@ -206,6 +184,7 @@ class SequentialDecimator(nn.Module):
 
 
 class ReinforceDecimator(nn.Module):
+    "Implements the (distributed) Reinforce decimator."
 
     def __init__(self, device, scorer, decimation_probability=0.5):
         super(ReinforceDecimator, self).__init__()
@@ -226,7 +205,6 @@ class ReinforceDecimator(nn.Module):
             if sat_problem._edge_mask is not None:
                 function_diff = function_diff * sat_problem._edge_mask
 
-            # sum_diff = util.sparse_max(function_diff.squeeze(1), sat_problem._graph_mask_tuple[1], self._device)
             sum_diff = util.sparse_smooth_max(function_diff, sat_problem._graph_mask_tuple[0], self._device)
             sum_diff = sum_diff * sat_problem._active_variables
             sum_diff = util.sparse_max(sum_diff.squeeze(1), sat_problem._batch_mask_tuple[0], self._device)
@@ -259,7 +237,6 @@ class ReinforceDecimator(nn.Module):
 
         if randomized:
             variable_state = torch.rand(edge_num, self._function_message_dim, dtype=torch.float32, device=self._device)
-            # variable_state = variable_state / torch.sum(variable_state, 1).unsqueeze(1)
             function_state = torch.rand(edge_num, self._variable_message_dim, dtype=torch.float32, device=self._device)
             function_state[:, 1] = 0
         else:

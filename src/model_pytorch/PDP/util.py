@@ -1,9 +1,15 @@
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE.md file in the project root for full license information.
+
+# util.py : Defines the utility functionalities for the PDP framework.
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 
 class MessageAggregator(nn.Module):
+    "Implements a deep set function for message aggregation at variable and function nodes."
 
     def __init__(self, device, input_dimension, output_dimension, mem_hidden_dimension,
                  mem_agg_hidden_dimension, agg_hidden_dimension, feature_dimension, include_self_message):
@@ -21,13 +27,8 @@ class MessageAggregator(nn.Module):
             self._W2_m = nn.Linear(
                 mem_hidden_dimension, mem_agg_hidden_dimension, bias=False)  # .to(self._device)
 
-            # self._bn1_m = nn.BatchNorm1d(mem_hidden_dimension)
-            # self._bn2_m = nn.BatchNorm1d(mem_agg_hidden_dimension)
-
             self._module_list.append(self._W1_m)
             self._module_list.append(self._W2_m)
-            # self._module_list.append(self._bn1_m)
-            # self._module_list.append(self._bn2_m)
 
         if agg_hidden_dimension > 0 and mem_agg_hidden_dimension > 0:
 
@@ -40,13 +41,8 @@ class MessageAggregator(nn.Module):
             self._W2_a = nn.Linear(
                 agg_hidden_dimension, output_dimension, bias=False)  # .to(self._device)
 
-            # self._bn1_a = nn.BatchNorm1d(agg_hidden_dimension)
-            # self._bn2_a = nn.BatchNorm1d(output_dimension)
-
             self._module_list.append(self._W1_a)
             self._module_list.append(self._W2_a)
-            # self._module_list.append(self._bn1_a)
-            # self._module_list.append(self._bn2_a)
 
         self._agg_hidden_dimension = agg_hidden_dimension
         self._mem_hidden_dimension = mem_hidden_dimension
@@ -56,7 +52,6 @@ class MessageAggregator(nn.Module):
 
         # Apply the pre-aggregation transform
         if self._mem_hidden_dimension > 0 and self._mem_agg_hidden_dimension > 0:
-            # state = F.logsigmoid(self._bn2_m(self._W2_m(F.logsigmoid(self._bn1_m(self._W1_m(state))))))
             state = F.logsigmoid(self._W2_m(F.logsigmoid(self._W1_m(state))))
 
         if edge_mask is not None:
@@ -77,7 +72,6 @@ class MessageAggregator(nn.Module):
 
         # Apply the post-aggregation transform
         if self._agg_hidden_dimension > 0 and self._mem_agg_hidden_dimension > 0:
-            # aggregated_state = F.logsigmoid(self._bn2_a(self._W2_a(F.logsigmoid(self._bn1_a(self._W1_a(aggregated_state))))))
             aggregated_state = F.logsigmoid(self._W2_a(F.logsigmoid(self._W1_a(aggregated_state))))
 
         return aggregated_state
@@ -87,6 +81,7 @@ class MessageAggregator(nn.Module):
 
 
 class MultiLayerPerceptron(nn.Module):
+    "Implements a standard fully-connected, multi-layer perceptron."
 
     def __init__(self, device, layer_dims):
 
@@ -116,6 +111,7 @@ class MultiLayerPerceptron(nn.Module):
 
 
 class SatLossEvaluator(nn.Module):
+    "Implements a module to calculate the energy (i.e. the loss) for the current prediction."
 
     def __init__(self, alpha, device):
         super(SatLossEvaluator, self).__init__()
@@ -196,9 +192,6 @@ class SatLossEvaluator(nn.Module):
         nominator = torch.mm(function_mask, weights * edge_values)
         denominator = torch.mm(function_mask, weights)
 
-        # clause_value = nominator / torch.max(denominator, eps)
-        # return -torch.mean(SatLossEvaluator.safe_log(clause_value, eps))
-
         clause_value = denominator / torch.max(nominator, eps)
         clause_value = 1 + (clause_value - 1).pow(loss_sharpness)
         return torch.mean(SatLossEvaluator.safe_log(clause_value, eps))
@@ -208,6 +201,7 @@ class SatLossEvaluator(nn.Module):
 
 
 class SatCNFEvaluator(nn.Module):
+    "Implements a module to evaluate the current prediction."
 
     def __init__(self, device):
         super(SatCNFEvaluator, self).__init__()
@@ -241,23 +235,13 @@ class SatCNFEvaluator(nn.Module):
 
         return (max_sat == batch_values).float()
 
-        # clause_values = torch.zeros(function_num, device=self._device)
-        # for i in torch.arange(function_num, dtype=torch.int32, device=self._device):
-        #     ind = (graph_map[1, :] == i).nonzero().squeeze(1)
-        #     clause_values[i] = edge_values[ind].max()
-
-        # result = torch.zeros(batch_size, device=self._device)
-        # for i in torch.arange(batch_size, dtype=torch.int32, device=self._device):
-        #     ind = (batch_function_map == i).nonzero().squeeze(1)
-        #     result[i] = clause_values[ind].min()
-
-        # return result.unsqueeze(1)
-
 
 ##########################################################################################################################
 
 
 class PerceptronTanh(nn.Module):
+    "Implements a 1-layer perceptron with Tanh activaton."
+
     def __init__(self, input_dimension, hidden_dimension, output_dimension):
         super(Perceptron, self).__init__()
         self._layer1 = nn.Linear(input_dimension, hidden_dimension)
@@ -271,6 +255,7 @@ class PerceptronTanh(nn.Module):
 
 
 def sparse_argmax(x, mask, device):
+    "Implements the exact, memory-inefficient argmax operation for a row vector input."
 
     if device.type == 'cuda':
         dense_mat = torch.cuda.sparse.FloatTensor(mask._indices(), x - x.min() + 1, mask.size(), device=device).to_dense()
@@ -280,6 +265,7 @@ def sparse_argmax(x, mask, device):
     return torch.argmax(dense_mat, 0)
 
 def sparse_max(x, mask, device):
+    "Implements the exact, memory-inefficient max operation for a row vector input."
 
     if device.type == 'cuda':
         dense_mat = torch.cuda.sparse.FloatTensor(mask._indices(), x - x.min() + 1, mask.size(), device=device).to_dense()
@@ -289,8 +275,12 @@ def sparse_max(x, mask, device):
     return torch.max(dense_mat, 0)[0] + x.min() - 1
 
 def safe_exp(x, device):
+    "Implements safe exp operation."
+
     return torch.min(x, torch.tensor([30.0], device=device)).exp()
 
 def sparse_smooth_max(x, mask, device, alpha=30):
+    "Implements the approximate, memory-efficient max operation for a row vector input."
+
     coeff = safe_exp(alpha * x, device)
     return torch.mm(mask, x * coeff) / torch.max(torch.mm(mask, coeff), torch.ones(1, device=device))

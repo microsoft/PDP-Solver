@@ -1,5 +1,9 @@
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE.md file in the project root for full license information.
+
+# PDP_solver_trainer.py : Implements a factor graph trainer for various types of PDP SAT solvers.
+
 import numpy as np
-import matplotlib.pyplot as pp
 import os, yaml, csv
 
 import torch
@@ -11,26 +15,27 @@ from model_pytorch import factor_graph_trainer
 from model_pytorch.PDP import solver, util
 from model_pytorch import generators
 
+
 ##########################################################################################################################
 
 
 class Perceptron(nn.Module):
+    "Implements a 1-layer perceptron."
+
     def __init__(self, input_dimension, hidden_dimension, output_dimension):
         super(Perceptron, self).__init__()
         self._layer1 = nn.Linear(input_dimension, hidden_dimension)
         self._layer2 = nn.Linear(hidden_dimension, output_dimension, bias=False)
 
-        # self._bn1 = nn.BatchNorm1d(hidden_dimension)
-        # self._bn2 = nn.BatchNorm1d(output_dimension)
-
     def forward(self, inp):
-        # return F.sigmoid(self._bn2(self._layer2(F.relu(self._bn1(self._layer1(inp))))))
         return F.sigmoid(self._layer2(F.relu(self._layer1(inp))))
 
 
 ##########################################################################################################################
 
 class SatFactorGraphTrainer(factor_graph_trainer.FactorGraphTrainerBase):
+    "Implements a factor graph trainer for various types of PDP SAT solvers."
+
     def __init__(self, config, use_cuda):
         super(SatFactorGraphTrainer, self).__init__(config=config, 
             has_meta_data=False, error_dim=config['error_dim'], loss=None, evaluator=nn.L1Loss(), use_cuda=use_cuda)
@@ -43,24 +48,6 @@ class SatFactorGraphTrainer(factor_graph_trainer.FactorGraphTrainerBase):
 
     def _build_graph(self, config):
         model_list = []
-
-        # model_list += [factor_graph_nbp.BeliefPropagator(device=self._device, name=config['model_name'], 
-        #         input_dimension=config['edge_feature_dim'], meta_data_dimension=config['meta_feature_dim'], 
-        #         hidden_dimension=config['hidden_dim'], mem_hidden_dimension=config['mem_hidden_dim'], 
-        #         agg_hidden_dimension=config['agg_hidden_dim'], mem_agg_hidden_dimension=config['mem_agg_hidden_dim'], 
-        #         prediction_dim=config['prediction_dim'], 
-        #         variable_classifier=Perceptron(config['hidden_dim'] + config['meta_feature_dim'], 
-        #             config['classifier_dim'], config['prediction_dim']),
-        #         function_classifier=None, dropout=config['dropout'])]
-
-        # model_list += [factor_graph_mp.NeuralPropagatorDecimatorSolver(device=self._device, name=config['model_name'], 
-        #         edge_dimension=config['edge_feature_dim'], meta_data_dimension=config['meta_feature_dim'], 
-        #         propagator_dimension=config['hidden_dim'], decimator_dimension=config['hidden_dim'],
-        #         mem_hidden_dimension=config['mem_hidden_dim'], 
-        #         agg_hidden_dimension=config['agg_hidden_dim'], mem_agg_hidden_dimension=config['mem_agg_hidden_dim'], 
-        #         prediction_dim=config['prediction_dim'], 
-        #         variable_classifier=Perceptron(config['hidden_dim'], config['classifier_dim'], config['prediction_dim']),
-        #         function_classifier=None, dropout=config['dropout'])]
 
         if config['model_type'] == 'np-nd-np':
             model_list += [solver.NeuralPropagatorDecimatorSolver(device=self._device, name=config['model_name'], 
@@ -155,6 +142,7 @@ class SatFactorGraphTrainer(factor_graph_trainer.FactorGraphTrainerBase):
         return message
 
     def _check_recurrence_termination(self, active, prediction, sat_problem):
+        "De-actives the CNF examples which the model has already found a SAT solution for."
 
         output = self._cnf_evaluator(variable_prediction=prediction[0], graph_map=sat_problem._graph_map, 
             batch_variable_map=sat_problem._batch_variable_map, batch_function_map=sat_problem._batch_function_map, 
@@ -167,14 +155,6 @@ class SatFactorGraphTrainer(factor_graph_trainer.FactorGraphTrainerBase):
         else:
             active[active[:, 0], 0] = (output[active[:, 0], 0] <= 0.5)
 
-    # def _check_recurrence_termination(self, active, prediction, 
-    #     graph_map, batch_variable_map, batch_function_map, edge_feature, graph_feat):
-
-    #     output = self._cnf_evaluator(variable_prediction=prediction[0], graph_map=graph_map, 
-    #         batch_variable_map=batch_variable_map, batch_function_map=batch_function_map, 
-    #         edge_feature=edge_feature, meta_data=graph_feat)#.detach().cpu().numpy()
-        
-    #     active[active[:, 0], 0] = (output[active[:, 0], 0] <= 0.5)
 
 ##########################################################################################################################
 
@@ -193,6 +173,7 @@ def write_to_csv_time(result_list, file_path):
             writer.writerow([row[0], row[2]])
 
 def run(random_seed, config_file, is_training, load_model, cpu, reset_step, use_generator, batch_replication):
+    "Runs the train/test/predict procedures."
     
     if not use_generator:
         np.random.seed(random_seed)
@@ -256,27 +237,6 @@ def run(random_seed, config_file, is_training, load_model, cpu, reset_step, use_
             load_model=load_model, reset_step=reset_step, generator=generator, 
             train_epoch_size=config['train_epoch_size'])
 
-        '''colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
-        line_styles = ['solid', 'dashed', 'dotted']
-        names = ['Accuracy', 'Recall']
-        mean_err = np.mean(errors, axis=3)
-        mean_loss = np.mean(losses, axis=2)
-
-        pp.subplot(2, 1, 1)
-        for i in range(len(model_list)):
-            for j in range(config['error_dim']):
-                pp.plot(mean_err[j, i, :], c=colors[i], ls=line_styles[j], label=model_list[i]._name + '-' + names[j])
-        pp.yscale('log')
-        pp.legend(loc='best', shadow=True)
-
-        pp.subplot(2, 1, 2)
-        for i in range(len(model_list)):
-            pp.plot(mean_loss[i, :], c=colors[i], label=model_list[i]._name)
-        pp.yscale('log')
-        pp.legend(loc='best', shadow=True)
-
-        pp.show()'''
-
     if config['verbose']:
         print("\nStarting the test/prediction phase...")
 
@@ -304,6 +264,7 @@ def run(random_seed, config_file, is_training, load_model, cpu, reset_step, use_
             write_to_csv(result, os.path.join(test_files, config['model_type'] + '_' + config['model_name'] + '_' + config['version'] + '-results.csv'))
             write_to_csv_time(result, os.path.join(test_files, config['model_type'] + '_' + config['model_name'] + '_' + config['version'] + '-results-time.csv'))
 
+        ## Optionally generating predictions
         # if config['verbose']:
         #     print("\nGenerating prediction file for " + test_files[0])
 

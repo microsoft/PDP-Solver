@@ -1,3 +1,8 @@
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE.md file in the project root for full license information.
+
+# dimacs2json.py : An auxiliary script for converting sets of DIMACS files into the PDP's compact JSON format.
+
 import numpy as np
 import hashlib as hl
 from os import listdir
@@ -11,6 +16,7 @@ import sys, argparse
 
 
 class CompactDimacs:
+    "Encapsulates a CNF file given in the DIMACS format."
 
     def __init__(self, dimacs_file, output, propagate):
 
@@ -106,7 +112,3 @@ if __name__ == '__main__':
     args = vars(parser.parse_args())
 
     convert_directory(args['in_dir'], args['out_file'], args['simplify'], args['positive'])
-
-    # bc1 = CompactDimacs('../../datasets/dimacs/dummy.txt', 0, False)
-    # print(bc1.to_json())
-    # print(bc1._clause_mat)

@@ -1,3 +1,8 @@
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE.md file in the project root for full license information.
+
+# pdp_predict.py : Defines various predictors and scorers for the PDP framework.
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -10,6 +15,7 @@ from model_pytorch.PDP import util
 
 
 class NeuralPredictor(nn.Module):
+    "Implements the neural predictor."
 
     def __init__(self, device, decimator_dimension, prediction_dimension, 
         edge_dimension, meta_data_dimension, mem_hidden_dimension, agg_hidden_dimension, mem_agg_hidden_dimension,
@@ -87,6 +93,8 @@ class NeuralPredictor(nn.Module):
 
 
 class IdentityPredictor(nn.Module):
+    "Implements the Identity predictor (prediction based on the assignments to the solution property of the SAT problem)."
+    
     def __init__(self, device, random_fill=False):
         super(IdentityPredictor, self).__init__()
         self._random_fill = random_fill
@@ -109,6 +117,7 @@ class IdentityPredictor(nn.Module):
 
 
 class SurveyScorer(nn.Module):
+    "Implements the varaible scoring mechanism for SP-guided decimation."
 
     def __init__(self, device, message_dimension, include_adaptors=False, pi=0.0):
         super(SurveyScorer, self).__init__()
@@ -188,6 +197,8 @@ class SurveyScorer(nn.Module):
 
 
 class ReinforcePredictor(nn.Module):
+    "Implements the prediction mechanism for the Reinforce Algorithm."
+    
     def __init__(self, device):
         super(ReinforcePredictor, self).__init__()
         self._device = device

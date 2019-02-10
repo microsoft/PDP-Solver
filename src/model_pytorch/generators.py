@@ -1,15 +1,21 @@
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE.md file in the project root for full license information.
+
+# generators.py : Defines various types of CNF generators for generating real-time CNF instances.
+
 import numpy as np
 import argparse
 import os, sys
 
-# from graph.sat import minisat
-
 def is_sat(_var_num, iclause_list):
-    cnf = minisat.cnf_from_iclauses(iclause_list)
-    return int(minisat.solve(cnf).sat)
+    ## Note: Invoke your SAT solver of choice here for generating labeled data.
+    return False
+
+##########################################################################
 
 
 class CNFGeneratorBase(object):
+    "The base class for all CNF generators."
 
     def __init__(self, min_n, max_n, min_alpha, max_alpha, alpha_resolution=10):
         self._min_n = min_n
@@ -21,9 +27,11 @@ class CNFGeneratorBase(object):
         self._alpha_resolution = alpha_resolution
 
     def generate(self):
+        "Generates unlabeled CNF instances."
         pass
 
     def generate_complete(self):
+        "Generates labeled CNF instances."
         pass
 
     def _to_json(self, n, m, graph_map, edge_feature, label):
@@ -83,6 +91,7 @@ class CNFGeneratorBase(object):
 
 
 class UniformCNFGenerator(CNFGeneratorBase):
+    "Implements the uniformly random CNF generator."
 
     def __init__(self, min_n, max_n, min_k, max_k, min_alpha, max_alpha, alpha_resolution=10):
         
@@ -147,6 +156,7 @@ class UniformCNFGenerator(CNFGeneratorBase):
 
 
 class ModularCNFGenerator(CNFGeneratorBase):
+    "Implements the modular random CNF generator according to the Community Attachment model (https://www.iiia.csic.es/sites/default/files/aij16.pdf)"
 
     def __init__(self, k, min_n, max_n, min_q, max_q, min_c, max_c, min_alpha, max_alpha, alpha_resolution=10):
         
@@ -253,6 +263,7 @@ class ModularCNFGenerator(CNFGeneratorBase):
 
 
 class VariableModularCNFGenerator(CNFGeneratorBase):
+    "Implements a variation of the Community Attachment model with variable sized clauses."
 
     def __init__(self, min_k, max_k, min_n, max_n, min_q, max_q, min_c, max_c, min_alpha, max_alpha, alpha_resolution=10):
         
@@ -404,14 +415,3 @@ if __name__ == '__main__':
                 max_k=args['max_k'], min_alpha=args['min_a'], max_alpha=args['max_a'], alpha_resolution=args['res'])
     
     generator.generate_dataset(args['size'], args['out_dir'], args['out_json'], args['name'], args['sat_only'])
-
-
-    # generator = VariableModularCNFGenerator(min_k=2, max_k=4, min_n=20, max_n=20, min_q=0.7, max_q=0.8, min_c=5, max_c=5, min_alpha=3, max_alpha=4, alpha_resolution=10)
-    # res = generator.generate()
-    # for i in res:
-    #     print(i)
-    
-    # generator = ModularCNFGenerator(k=4, min_n=10, max_n=10, min_q=0.7, max_q=0.8, min_c=7, max_c=7, min_alpha=3, max_alpha=4, alpha_resolution=10)
-    # res = generator.generate()
-    # for i in res:
-    #     print(i)

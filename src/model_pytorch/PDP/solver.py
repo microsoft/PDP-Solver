@@ -1,3 +1,8 @@
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE.md file in the project root for full license information.
+
+# solver.py : Defines the base class for all PDP Solvers as well as the various inherited solvers.
+
 import os
 
 import torch
@@ -11,12 +16,16 @@ from model_pytorch.PDP import pdp_propagate, pdp_decimate, pdp_predict, util
 ###############################################################
 
 class SATProblem(object):
+    "The class that encapsulates a batch of CNF problem instances."
+
     def __init__(self, data_batch, device, batch_replication=1):
         self._device = device
         self._batch_replication = batch_replication
         self.setup_problem(data_batch, batch_replication)
 
     def setup_problem(self, data_batch, batch_replication):
+        "Setup the problem properties as well as the relevant sparse matrices."
+
         if batch_replication > 1:
             self._replication_mask_tuple = self._compute_batch_replication_map(data_batch[1], batch_replication)
             self._graph_map, self._batch_variable_map, self._batch_function_map, self._edge_feature, self._meta_data, _ = self._replicate_batch(data_batch, batch_replication)
@@ -43,6 +52,8 @@ class SATProblem(object):
         self._is_sat = 0.5 * torch.ones(self._batch_size, device=self._device)
 
     def _replicate_batch(self, data_batch, batch_replication):
+        "Implements the batch replication."
+
         graph_map, batch_variable_map, batch_function_map, edge_feature, meta_data, label = data_batch
         edge_num = graph_map.size()[1]
         batch_size = (batch_variable_map.max() + 1).long().item()
@@ -185,6 +196,8 @@ class SATProblem(object):
             self._active_functions[single_functions[:, 0] == 1, 0] = 0
 
     def _peel(self):
+        "Implements the peeling algorithm."
+        
         vf_map, vf_map_transpose, signed_vf_map, _ = self._vf_mask_tuple
 
         variable_degree = torch.mm(vf_map, self._active_functions)
@@ -208,6 +221,8 @@ class SATProblem(object):
             self._active_functions[single_functions[:, 0] == 1, 0] = 0
 
     def _set_variable_core(self, assignment):
+        "Fixes variables to certain binary values."
+
         _, vf_map_transpose, _, signed_vf_map_transpose = self._vf_mask_tuple
 
         assignment *= self._active_variables
@@ -229,6 +244,8 @@ class SATProblem(object):
         self._solution[assignment[:, 0].abs() == 1] = (assignment[assignment[:, 0].abs() == 1, 0] + 1) / 2.0
 
     def _propagate_single_clauses(self):
+        "Implements unit clause propagation algorithm."
+
         vf_map, vf_map_transpose, signed_vf_map, _ = self._vf_mask_tuple
         b_variable_mask, b_variable_mask_transpose, b_function_mask, _ = self._batch_mask_tuple
 
@@ -274,10 +291,14 @@ class SATProblem(object):
             self._set_variable_core(assignment)
 
     def set_variables(self, assignment):
+        "Fixes variables to certain binary values and simplifies the CNF accordingly."
+
         self._set_variable_core(assignment)
         self.simplify()
 
     def simplify(self):
+        "Simplifies the CNF."
+
         self._propagate_single_clauses()
         self._peel()
 
@@ -288,6 +309,7 @@ class SATProblem(object):
 
 
 class PropagatorDecimatorSolverBase(nn.Module):
+    "The base class for all PDP SAT solvers."
 
     def __init__(self, device, name, propagator, decimator, predictor, local_search_iterations=0, epsilon=0.05):
 
@@ -389,6 +411,8 @@ class PropagatorDecimatorSolverBase(nn.Module):
         return propagator_state, decimator_state
 
     def _update_solution(self, prediction, sat_problem):
+        "Updates the the SAT problem object's solution according to the cuerrent prediction."
+
         if prediction[0] is not None:
             variable_solution = sat_problem._active_variables * prediction[0] + \
                 (1.0 - sat_problem._active_variables) * sat_problem._solution.unsqueeze(1)
@@ -400,6 +424,8 @@ class PropagatorDecimatorSolverBase(nn.Module):
         return variable_solution, prediction[1]
 
     def _deduplicate(self, prediction, sat_problem):
+        "De-duplicates the current batch (to neutralize the batch replication) by finding the replica with minimum energy for each problem instance. "
+
         if sat_problem._batch_replication <= 1 or sat_problem._replication_mask_tuple is None:
             return None, None, None
 
@@ -422,6 +448,8 @@ class PropagatorDecimatorSolverBase(nn.Module):
         return edge_flag, variable_flag, function_flag
 
     def _local_search(self, prediction, sat_problem):
+        "Implements the Walk-SAT algorithm for post-processing."
+
         assignment = (prediction[0] > 0.5).float()
         assignment = sat_problem._active_variables * (2*assignment - 1.0)
 
@@ -452,6 +480,8 @@ class PropagatorDecimatorSolverBase(nn.Module):
         return (assignment + 1) / 2.0, prediction[1]
 
     def _compute_energy_diff(self, assignment, sat_problem):
+        "Computes the delta energy if each variable to be flipped during the local search."
+
         distributed_assignment = torch.mm(sat_problem._signed_mask_tuple[1], assignment * sat_problem._active_variables)
         aggregated_assignment = torch.mm(sat_problem._graph_mask_tuple[2], distributed_assignment)
         aggregated_assignment = torch.mm(sat_problem._graph_mask_tuple[3], aggregated_assignment)
@@ -467,6 +497,8 @@ class PropagatorDecimatorSolverBase(nn.Module):
         return delta
 
     def _compute_energy(self, assignment, sat_problem):
+        "Computes the energy of each CNF instance present in the batch."
+
         aggregated_assignment = torch.mm(sat_problem._signed_mask_tuple[1], assignment * sat_problem._active_variables)
         aggregated_assignment = torch.mm(sat_problem._graph_mask_tuple[2], aggregated_assignment)
 
@@ -477,6 +509,7 @@ class PropagatorDecimatorSolverBase(nn.Module):
         return torch.mm(sat_problem._batch_mask_tuple[3], unsat_functions), unsat_functions
 
     def get_init_state(self, graph_map, batch_variable_map, batch_function_map, edge_feature, graph_feat, randomized, batch_replication=1):
+        "Initializes the propgator and the decimator messages in each direction."
 
         if self._propagator is None:
             init_propagator_state = None
@@ -495,6 +528,7 @@ class PropagatorDecimatorSolverBase(nn.Module):
 
 
 class NeuralPropagatorDecimatorSolver(PropagatorDecimatorSolverBase):
+    "Implements a fully neural PDP SAT solver with both the propagator and the decimator being neural."
 
     def __init__(self, device, name, edge_dimension, meta_data_dimension, 
                 propagator_dimension, decimator_dimension, 
@@ -520,6 +554,8 @@ class NeuralPropagatorDecimatorSolver(PropagatorDecimatorSolverBase):
 
 
 class NeuralSurveyPropagatorSolver(PropagatorDecimatorSolverBase):
+    "Implements a PDP solver with the SP propgator and a neural decimator."
+
     def __init__(self, device, name, edge_dimension, meta_data_dimension, 
             decimator_dimension, 
             mem_hidden_dimension, agg_hidden_dimension, mem_agg_hidden_dimension, prediction_dimension,
@@ -542,6 +578,8 @@ class NeuralSurveyPropagatorSolver(PropagatorDecimatorSolverBase):
 
 
 class SurveyPropagatorSolver(PropagatorDecimatorSolverBase):
+    "Implements the classical SP-guided decimation solver via the PDP framework."
+
     def __init__(self, device, name, tolerance, t_max, local_search_iterations=0, epsilon=0.05):
 
         super(SurveyPropagatorSolver, self).__init__(
@@ -557,6 +595,8 @@ class SurveyPropagatorSolver(PropagatorDecimatorSolverBase):
 
 
 class WalkSATSolver(PropagatorDecimatorSolverBase):
+    "Implements the classical Walk-SAT solver via the PDP framework."
+
     def __init__(self, device, name, iteration_num, epsilon=0.05):
 
         super(WalkSATSolver, self).__init__(
@@ -569,6 +609,8 @@ class WalkSATSolver(PropagatorDecimatorSolverBase):
 
 
 class ReinforceSurveyPropagatorSolver(PropagatorDecimatorSolverBase):
+    "Implements the classical Reinforce solver via the PDP framework."
+
     def __init__(self, device, name, pi=0.1, decimation_probability=0.5, local_search_iterations=0, epsilon=0.05):
 
         super(ReinforceSurveyPropagatorSolver, self).__init__(
@@ -585,6 +627,8 @@ class ReinforceSurveyPropagatorSolver(PropagatorDecimatorSolverBase):
 
 
 class NeuralSequentialDecimatorSolver(PropagatorDecimatorSolverBase):
+    "Implements a PDP solver with a neural propgator and the sequential decimator."
+
     def __init__(self, device, name, edge_dimension, meta_data_dimension, 
                 propagator_dimension, decimator_dimension, 
                 mem_hidden_dimension, agg_hidden_dimension, mem_agg_hidden_dimension, 
