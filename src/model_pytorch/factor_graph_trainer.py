@@ -258,7 +258,7 @@ class FactorGraphTrainerBase:
                     edge_feature, graph_feat, label) = [self._to_cuda(d[i]) for d in data]
 
                     self._predict_batch(graph_map, batch_variable_map, batch_function_map, 
-                        edge_feature, graph_feat, label, post_processor, file_stream, batch_replication)
+                        edge_feature, graph_feat, label, post_processor, batch_replication)
 
                     del graph_map
                     del batch_variable_map
@@ -447,7 +447,7 @@ class FactorGraphTrainerBase:
 
         # Build the input pipeline
         test_loader = input_pipeline.FactorGraphDataset.get_loader(
-            input_file=test_list[0], limit=self._config['test_batch_limit'],
+            input_file=test_list, limit=self._config['test_batch_limit'],
             hidden_dim=self._config['hidden_dim'], batch_size=self._config['batch_size'], shuffle=False,
             num_workers=self._num_cores, max_cache_size=self._config['max_cache_size'])
 

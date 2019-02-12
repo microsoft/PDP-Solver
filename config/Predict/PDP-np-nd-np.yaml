@@ -1,6 +1,7 @@
 model_type: "np-nd-np"
 has_meta_data: false
-model_path: "../../Trained-models/SAT/p-prodec2-gcnf-10-100-pytorch/2.0g/best/p-prodec2-gcnf-10-100-pytorch"
+model_name: "p-prodec2-gcnf-10-100-pytorch"
+model_path: "../../Trained-models/SAT/p-prodec2-gcnf-10-100-pytorch/2.0g/best"
 label_dim: 1
 edge_feature_dim: 1
 meta_feature_dim: 0

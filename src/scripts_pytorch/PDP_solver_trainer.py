@@ -129,15 +129,16 @@ class SatFactorGraphTrainer(factor_graph_trainer.FactorGraphTrainerBase):
         message = ""
         labs = label.detach().cpu().numpy()
 
-        output = self._cnf_evaluator(variable_prediction=prediction[0], label=label, graph_map=graph_map, 
+        output = self._cnf_evaluator(variable_prediction=prediction[0], graph_map=graph_map, 
             batch_variable_map=batch_variable_map, batch_function_map=batch_function_map, 
-            edge_feature=edge_feature, meta_data=meta_data).detach().cpu().numpy()
+            edge_feature=edge_feature, meta_data=graph_feat).detach().cpu().numpy()
 
         for i in range(output.shape[0]):
             instance = {}
-            instance['prediction'] = output[i].flatten()
-            instance['solution'] = prediction[0][batch_variable_map == i, 0].detach().cpu().numpy().flatten()
-            message += (str(instance) + "\n")
+            instance['label'] = labs[i, 0]
+            instance['prediction'] = output[i].flatten()[0]
+            instance['solution'] = prediction[0][batch_variable_map == i, 0].detach().cpu().numpy().flatten().tolist()
+            message += (str(instance).replace("'", '"') + "\n")
             self._counter += 1
 
         return message

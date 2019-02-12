@@ -4,9 +4,10 @@
 # satyr.py : The main script to run a trained PDP solver against a test dataset.
 
 import argparse
-import time, yaml, sys
+import yaml, sys
 import numpy as np
 import torch
+from datetime import datetime
 from scripts_pytorch import PDP_solver_trainer
 
 
@@ -37,13 +38,14 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--batch_replication', help='Batch replication factor', type=int, default=1)
     parser.add_argument('-z', '--batch_size', help='Batch size', type=int, default=5000)
     parser.add_argument('-m', '--max_cache_size', help='Maximum cache size', type=int, default=100000)
-    parser.add_argument('-l', '--local_search_iteration', help='Number of iterations for post-processing local search', type=int, default=100)
+    parser.add_argument('-l', '--test_batch_limit', help='Memory limit for mini-batches', type=int, default=40000000)
+    parser.add_argument('-w', '--local_search_iteration', help='Number of iterations for post-processing local search', type=int, default=100)
     parser.add_argument('-e', '--epsilon', help='Epsilon probablity for post-processing local search', type=float, default=0.5)
     parser.add_argument('-v', '--verbose', help='Verbose', action='store_true')
     parser.add_argument('-c', '--cpu_mode', help='Run on CPU', action='store_true')
-    parser.add_argument('-s', '--random_seed', help='Random seed', type=int, default=int(round(time.time() * 1000)))
+    parser.add_argument('-s', '--random_seed', help='Random seed', type=int, default=int(datetime.now().microsecond))
 
-    args = parser.parse_args()
+    args = vars(parser.parse_args())
 
     # Load the model config
     with open(args['model_config'], 'r') as f:
@@ -52,7 +54,9 @@ if __name__ == '__main__':
     # Merge model config and other arguments into one config dict
     config = {**model_config, **args}
 
-    config['drop_out'] = 0
+    config['dropout'] = 0
+    config['error_dim'] = 1
+    config['exploration'] = 0
 
     # Run the prediction engine
     run(config)
