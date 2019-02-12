@@ -77,13 +77,7 @@ class DynamicBatchDivider(object):
 class FactorGraphDataset(data.Dataset):
     "Implements a PyTorch Dataset class for reading and parsing CNFs in the JSON format from disk."
 
-    # batch_divider = DynamicBatchDivider(3000000, 100)
-    # batch_divider = DynamicBatchDivider(3500000, 100)
-    # batch_divider = DynamicBatchDivider(40000000, 100)
-    batch_divider = DynamicBatchDivider(4000000, 150)
-    # batch_divider = DynamicBatchDivider(1800000, 100)
-
-    def __init__(self, input_file, max_cache_size=100000, generator=None, epoch_size=0):
+    def __init__(self, input_file, limit, hidden_dim, max_cache_size=100000, generator=None, epoch_size=0):
 
         self._cache = collections.OrderedDict()
         self._generator = generator
@@ -94,6 +88,8 @@ class FactorGraphDataset(data.Dataset):
         if self._generator is None:
             with open(self._input_file, 'r') as fh_input:
                 self._row_num = len(fh_input.readlines()) - 1
+
+        self.batch_divider = DynamicBatchDivider(limit, hidden_dim)
 
     def __len__(self):
         if self._generator is not None:
@@ -132,14 +128,13 @@ class FactorGraphDataset(data.Dataset):
 
         return (variable_num, function_num, graph_map, edge_feature, None, float(input_data[3]))
 
-    @staticmethod
-    def dag_collate_fn(input_data):
-        "Torch dataset loader collation function for DAG input."
+    def dag_collate_fn(self, input_data):
+        "Torch dataset loader collation function for factor graph input."
 
         vn, fn, gm, ef, gf, l = zip(*input_data)
 
         variable_num, function_num, graph_map, edge_feature, graph_feat, label = \
-            FactorGraphDataset.batch_divider.divide(vn, fn, gm, ef, gf, l)
+            self.batch_divider.divide(vn, fn, gm, ef, gf, l)
         segment_num = len(variable_num)
 
         graph_feat_batch = []
@@ -189,10 +184,10 @@ class FactorGraphDataset(data.Dataset):
                     max_cache_size=100000, use_cuda=True, generator=None, epoch_size=0):
         "Return the torch dataset loader object for the input."
 
-        FactorGraphDataset.batch_divider = DynamicBatchDivider(limit, hidden_dim)        
-
         dataset = FactorGraphDataset(
             input_file=input_file,
+            limit=limit,
+            hidden_dim=hidden_dim,
             max_cache_size=max_cache_size,
             generator=generator, 
             epoch_size=epoch_size)
@@ -202,7 +197,7 @@ class FactorGraphDataset(data.Dataset):
             batch_size=batch_size,
             shuffle=shuffle,
             num_workers=num_workers,
-            collate_fn=FactorGraphDataset.dag_collate_fn,
+            collate_fn=dataset.dag_collate_fn,
             pin_memory=use_cuda)
 
         return data_loader
