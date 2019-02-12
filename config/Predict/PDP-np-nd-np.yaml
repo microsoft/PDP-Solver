@@ -1,0 +1,12 @@
+model_type: "np-nd-np"
+has_meta_data: false
+model_path: "../../Trained-models/SAT/p-prodec2-gcnf-10-100-pytorch/2.0g/best/p-prodec2-gcnf-10-100-pytorch"
+label_dim: 1
+edge_feature_dim: 1
+meta_feature_dim: 0
+prediction_dim: 1
+hidden_dim: 150
+mem_hidden_dim: 100
+agg_hidden_dim: 100
+mem_agg_hidden_dim: 50
+classifier_dim: 50

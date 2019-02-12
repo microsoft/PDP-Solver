@@ -3,7 +3,7 @@
 
 # factor_graph_trainer.py : Defines the trainer base class for the PDP framework.
 
-import os
+import os, sys
 import time
 import math
 import multiprocessing
@@ -32,9 +32,9 @@ class FactorGraphTrainerBase:
         
         if config['verbose']:
             if self._use_cuda:
-                print('Using GPU...')
+                print('Using GPU...', file=sys.stderr)
             else:
-                print('Using CPU...')
+                print('Using CPU...', file=sys.stderr)
         
         self._device = torch.device("cuda" if self._use_cuda else "cpu")
 
@@ -44,7 +44,7 @@ class FactorGraphTrainerBase:
         self._evaluator = evaluator
 
         if config['verbose']:
-            print("The number of CPU cores is", self._num_cores)
+            print("The number of CPU cores is", self._num_cores, file=sys.stderr)
 
         torch.set_num_threads(self._num_cores)
 
@@ -128,7 +128,7 @@ class FactorGraphTrainerBase:
                 if self._config['verbose']:
                     print("Training epoch with batch of size {:4d} ({:4d}/{:4d}): {:3d}% complete...".format(
                         batch_variable_map.max().item(), total_example_num % self._config['batch_size'], self._config['batch_size'],
-                        int(j * 100.0 / train_batch_num)), end='\r')
+                        int(j * 100.0 / train_batch_num)), end='\r', file=sys.stderr)
 
                 del graph_map
                 del batch_variable_map
@@ -200,7 +200,7 @@ class FactorGraphTrainerBase:
                     if self._config['verbose']:
                         print("Testing epoch with batch of size {:4d} ({:4d}/{:4d}): {:3d}% complete...".format(
                             batch_variable_map.max().item(), total_example_num % self._config['batch_size'], self._config['batch_size'],
-                            int(j * 100.0 / test_batch_num)), end='\r')
+                            int(j * 100.0 / test_batch_num)), end='\r', file=sys.stderr)
 
                 del graph_map
                 del batch_variable_map
@@ -243,7 +243,7 @@ class FactorGraphTrainerBase:
             for s in state:
                 del s
 
-    def _predict_epoch(self, validation_loader, post_processor, file_stream, batch_replication):
+    def _predict_epoch(self, validation_loader, post_processor, batch_replication):
 
         test_batch_num = math.ceil(len(validation_loader.dataset) / self._config['batch_size'])
 
@@ -252,7 +252,6 @@ class FactorGraphTrainerBase:
             for (j, data) in enumerate(validation_loader, 1):
                 segment_num = len(data[0])
 
-                file_stream.write("\n\nBatch # {:s}\n".format(str(j)))
                 for i in range(segment_num):
 
                     (graph_map, batch_variable_map, batch_function_map, 
@@ -270,10 +269,10 @@ class FactorGraphTrainerBase:
 
                 if self._config['verbose']:
                     print("Predicting epoch: %3d%% complete..."
-                          % (j * 100.0 / test_batch_num), end='\r')
+                          % (j * 100.0 / test_batch_num), end='\r', file=sys.stderr)
 
     def _predict_batch(self, graph_map, batch_variable_map, batch_function_map, 
-        edge_feature, graph_feat, label, post_processor, file_stream, batch_replication):
+        edge_feature, graph_feat, label, post_processor, batch_replication):
 
         edge_num = graph_map.size(1)
 
@@ -288,15 +287,10 @@ class FactorGraphTrainerBase:
                 meta_data=graph_feat, is_training=False, iteration_num=self._config['test_recurrence_num'],
                 check_termination=self._check_recurrence_termination, batch_replication=batch_replication)
 
-            if post_processor is None or not callable(post_processor):
-                file_stream.write('\n{:s}`s prediction: \n{:s}'.format(
-                    _module(model)._name, np.array_str(
-                        np.squeeze(prediction.detach().cpu().numpy(), axis=0))))
-            else:
+            if post_processor is not None and callable(post_processor):
                 message = post_processor(_module(model), prediction, graph_map,
                     batch_variable_map, batch_function_map, edge_feature, graph_feat, label)
-                file_stream.write(
-                    '\n{:s}`s prediction: {:s}'.format(_module(model)._name, message))
+                print(message)
 
             for p in prediction:
                 del p
@@ -386,8 +380,8 @@ class FactorGraphTrainerBase:
                             np.array_str(errors[:, i, epoch, rep].flatten()),
                             name, losses[i, epoch, rep])
 
-                    print('Rep {:2d}, Epoch {:2d}: {:s}'.format(rep + 1, epoch + 1, message))
-                    print('Time spent: %s seconds' % duration)
+                    print('Rep {:2d}, Epoch {:2d}: {:s}'.format(rep + 1, epoch + 1, message), file=sys.stderr)
+                    print('Time spent: %s seconds' % duration, file=sys.stderr)
 
         if self._use_cuda:
             torch.backends.cudnn.benchmark = False
@@ -441,8 +435,8 @@ class FactorGraphTrainerBase:
                     message += '{:s}, dataset:{:s} error={:s}|'.format(
                         _module(model)._name, file, np.array_str(error[:, i].flatten()))
 
-                print(message)
-                print('Time spent: %s seconds' % duration)
+                print(message, file=sys.stderr)
+                print('Time spent: %s seconds' % duration, file=sys.stderr)
 
             result += [[file, error, duration]]
 
@@ -461,8 +455,7 @@ class FactorGraphTrainerBase:
             self._load(import_path_base)
 
         start_time = time.time()
-        with open(test_list[0] + '-predictions.txt', 'w') as file_stream:
-            self._predict_epoch(test_loader, post_processor, file_stream, batch_replication)
+        self._predict_epoch(test_loader, post_processor, batch_replication)
 
         duration = time.time() - start_time
 
@@ -470,4 +463,4 @@ class FactorGraphTrainerBase:
             torch.cuda.empty_cache()
 
         if self._config['verbose']:
-            print('Time spent: %s seconds' % duration)
+            print('Time spent: %s seconds' % duration, file=sys.stderr)

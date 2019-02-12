@@ -4,7 +4,7 @@
 # PDP_solver_trainer.py : Implements a factor graph trainer for various types of PDP SAT solvers.
 
 import numpy as np
-import os, yaml, csv
+import os, yaml, csv, sys
 
 import torch
 import torch.nn as nn
@@ -95,7 +95,7 @@ class SatFactorGraphTrainer(factor_graph_trainer.FactorGraphTrainerBase):
                     pi=config['pi'], decimation_probability=config['decimation_probability'],
                     local_search_iterations=config['local_search_iteration'], epsilon=config['epsilon'])]
 
-        print("The model parameter count is %d.\n" % model_list[0].parameter_count())
+        print("The model parameter count is %d.\n" % model_list[0].parameter_count(), file=sys.stderr)
         return model_list
 
     def _compute_loss(self, model, loss, prediction, label, graph_map, batch_variable_map, 
@@ -124,6 +124,7 @@ class SatFactorGraphTrainer(factor_graph_trainer.FactorGraphTrainerBase):
 
     def _post_process_predictions(self, model, prediction, graph_map, 
         batch_variable_map, batch_function_map, edge_feature, graph_feat, label):
+        "Formats the prediction and the output solution into JSON format."
 
         message = ""
         labs = label.detach().cpu().numpy()
@@ -133,10 +134,10 @@ class SatFactorGraphTrainer(factor_graph_trainer.FactorGraphTrainerBase):
             edge_feature=edge_feature, meta_data=meta_data).detach().cpu().numpy()
 
         for i in range(output.shape[0]):
-            values = output[i].flatten()
-            solution = prediction[0].detach().cpu().numpy().flatten()
-            message += "\nExample {:s}, Label: {:s}, Prediction: {:s}, Output: {:s}, Solution: \n{:s}\n".format(
-                str(self._counter), str(labs[i, :]), "SAT" if values > 0.5 else "UNSAT", str(values), np.array_str(solution))
+            instance = {}
+            instance['prediction'] = output[i].flatten()
+            instance['solution'] = prediction[0][batch_variable_map == i, 0].detach().cpu().numpy().flatten()
+            message += (str(instance) + "\n")
             self._counter += 1
 
         return message
@@ -192,11 +193,11 @@ def run(random_seed, config_file, is_training, load_model, cpu, reset_step, use_
         config['validation_path'] = [os.path.join(config['validation_path'], f) \
             for f in os.listdir(config['validation_path']) if os.path.isfile(os.path.join(config['validation_path'], f)) and f.endswith('.json')]
 
-    print("Training file(s):")
-    print(config['train_path'])
+    print("Training file(s):", file=sys.stderr)
+    print(config['train_path'], file=sys.stderr)
 
-    print("Validation file(s):")
-    print(config['validation_path'])
+    print("Validation file(s):", file=sys.stderr)
+    print(config['validation_path'], file=sys.stderr)
 
     best_model_path_base = os.path.join(os.path.relpath(config['model_path']),
                                         config['model_name'], config['version'], "best")
@@ -215,7 +216,7 @@ def run(random_seed, config_file, is_training, load_model, cpu, reset_step, use_
     # Training
     if is_training:
         if config['verbose']:
-            print("Starting the training phase...")
+            print("Starting the training phase...", file=sys.stderr)
 
         generator = None
 
@@ -238,11 +239,11 @@ def run(random_seed, config_file, is_training, load_model, cpu, reset_step, use_
             train_epoch_size=config['train_epoch_size'])
 
     if config['verbose']:
-        print("\nStarting the test/prediction phase...")
+        print("\nStarting the test/prediction phase...", file=sys.stderr)
 
     for test_files in config['test_path']:
         if config['verbose']:
-            print("\nTesting " + test_files)
+            print("\nTesting " + test_files, file=sys.stderr)
 
         if load_model == "last":
             import_path_base = last_model_path_base
@@ -256,9 +257,9 @@ def run(random_seed, config_file, is_training, load_model, cpu, reset_step, use_
         if config['verbose']:
             for row in result:
                 filename, errors, _ = row
-                print('Dataset: ' + filename)
-                print("Accuracy: \t%s" % (1 - errors[0]))
-                print("Recall: \t%s" % (1 - errors[1]))
+                print('Dataset: ' + filename, file=sys.stderr)
+                print("Accuracy: \t%s" % (1 - errors[0]), file=sys.stderr)
+                print("Recall: \t%s" % (1 - errors[1]), file=sys.stderr)
 
         if os.path.isdir(test_files):
             write_to_csv(result, os.path.join(test_files, config['model_type'] + '_' + config['model_name'] + '_' + config['version'] + '-results.csv'))
@@ -266,7 +267,7 @@ def run(random_seed, config_file, is_training, load_model, cpu, reset_step, use_
 
         ## Optionally generating predictions
         # if config['verbose']:
-        #     print("\nGenerating prediction file for " + test_files[0])
+        #     print("\nGenerating prediction file for " + test_files[0], file=sys.stderr)
 
         # trainer._counter = 0
         # trainer.predict(test_list=test_files, import_path_base=last_model_path_base if load_model == "last" else best_model_path_base, 

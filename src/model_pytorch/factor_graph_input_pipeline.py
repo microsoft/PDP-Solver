@@ -203,18 +203,6 @@ class FactorGraphDataset(data.Dataset):
         return data_loader
 
 
-if __name__ == '__main__':
-    loader = FactorGraphDataset.get_loader(input_file='../../../datasets/SAT/toy.json', 
-        limit=500, hidden_dim=1, batch_size=3, shuffle=False, num_workers=1,
-                    max_cache_size=100000, use_cuda=False, generator=None, epoch_size=0)
-
-    for (j, data) in enumerate(loader, 1):
-        for d in data:
-            print(d)
-
-        break
-
-
 
 
 
