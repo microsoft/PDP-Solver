@@ -136,7 +136,7 @@ class SatFactorGraphTrainer(factor_graph_trainer.FactorGraphTrainerBase):
         for i in range(output.shape[0]):
             instance = {}
             instance['label'] = labs[i, 0]
-            instance['prediction'] = output[i].flatten()[0]
+            instance['solved'] = output[i].flatten()[0] == 1
             instance['solution'] = prediction[0][batch_variable_map == i, 0].detach().cpu().numpy().flatten().tolist()
             message += (str(instance).replace("'", '"') + "\n")
             self._counter += 1
