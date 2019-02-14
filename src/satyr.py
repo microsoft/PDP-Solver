@@ -4,11 +4,12 @@
 # satyr.py : The main script to run a trained PDP solver against a test dataset.
 
 import argparse
-import yaml, sys
+import yaml, sys, os
 import numpy as np
 import torch
 from datetime import datetime
 from scripts_pytorch import PDP_solver_trainer
+import dimacs2json
 
 
 def run(config):
@@ -43,6 +44,7 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--epsilon', help='Epsilon probablity for post-processing local search', type=float, default=0.5)
     parser.add_argument('-v', '--verbose', help='Verbose', action='store_true')
     parser.add_argument('-c', '--cpu_mode', help='Run on CPU', action='store_true')
+    parser.add_argument('-d', '--dimacs', help='The input folder contains DIMACS files', action='store_true')
     parser.add_argument('-s', '--random_seed', help='Random seed', type=int, default=int(datetime.now().microsecond))
 
     args = vars(parser.parse_args())
@@ -50,6 +52,21 @@ if __name__ == '__main__':
     # Load the model config
     with open(args['model_config'], 'r') as f:
         model_config = yaml.load(f)
+
+    # Convert DIMACS input files into JSON
+    if args['dimacs']:
+        print("\nConverting DIMACS files into JSON...", file=sys.stderr)
+        temp_file_name = 'temp_problem_file.json'
+        
+        if os.path.isfile(args['test_path']):
+            head, _ = os.path.split(args['test_path'])
+            temp_file_name = os.path.join(head, temp_file_name)
+            dimacs2json.convert_file(args['test_path'], temp_file_name, False)
+        else:
+            temp_file_name = os.path.join(args['test_path'], temp_file_name)
+            dimacs2json.convert_directory(args['test_path'], temp_file_name, False)
+
+        args['test_path'] = temp_file_name
 
     # Merge model config and other arguments into one config dict
     config = {**model_config, **args}
@@ -60,3 +77,6 @@ if __name__ == '__main__':
 
     # Run the prediction engine
     run(config)
+
+    if args['dimacs']:
+        os.remove(temp_file_name)

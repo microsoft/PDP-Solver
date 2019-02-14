@@ -6,7 +6,7 @@
 import numpy as np
 import hashlib as hl
 from os import listdir
-from os.path import isfile, join
+from os.path import isfile, join, split
 
 from heapq import heappush, heappop
 
@@ -21,6 +21,7 @@ class CompactDimacs:
     def __init__(self, dimacs_file, output, propagate):
 
         self.propagate = propagate
+        self.file_name = split(dimacs_file)[1]
 
         with open(dimacs_file, 'r') as f:
             j = 0
@@ -84,7 +85,7 @@ class CompactDimacs:
         clause_num, var_num = self._clause_mat.shape
 
         ind = np.nonzero(self._clause_mat)
-        return [[var_num, clause_num], list((ind[1] + 1) * self._clause_mat[ind]), list(ind[0] + 1), self._output]
+        return [[var_num, clause_num], list((ind[1] + 1) * self._clause_mat[ind]), list(ind[0] + 1), self._output, [self.file_name]]
 
 
 def convert_directory(dimacs_dir, output_file, propagate, only_positive=False):
@@ -92,16 +93,30 @@ def convert_directory(dimacs_dir, output_file, propagate, only_positive=False):
 
     with open(output_file, 'w') as f:
         for i in range(len(file_list)):
-            temp = file_list[i][-8]
-            label = float(temp) if temp.isdigit() else 1
+            if len(file_list[i]) < 8:
+                label = -1
+            else:
+                temp = file_list[i][-8]
+                label = float(temp) if temp.isdigit() else -1
+
             if only_positive and label == 0:
                 continue
 
             bc = CompactDimacs(file_list[i], label, propagate)
             f.write(str(bc.to_json()).replace("'", '"') + '\n')
             print("Generating topsort file: %6.2f%% complete..." % (
-                (i + 1) * 100.0 / len(file_list)), end='\r')
+                (i + 1) * 100.0 / len(file_list)), end='\r', file=sys.stderr)
 
+def convert_file(file_name, output_file, propagate):
+    with open(output_file, 'w') as f:
+        if len(file_name) < 8:
+            label = -1
+        else:
+            temp = file_name[-8]
+            label = float(temp) if temp.isdigit() else -1
+
+        bc = CompactDimacs(file_name, label, propagate)
+        f.write(str(bc.to_json()).replace("'", '"') + '\n')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

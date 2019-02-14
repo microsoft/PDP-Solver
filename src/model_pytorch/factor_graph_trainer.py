@@ -97,6 +97,9 @@ class FactorGraphTrainerBase:
         return model.cpu()
 
     def _to_cuda(self, data):
+        if isinstance(data, list):
+            return data
+
         if data is not None and self._use_cuda:
             return data.cuda(self._device, non_blocking=True)
         return data
@@ -119,7 +122,7 @@ class FactorGraphTrainerBase:
             for i in range(segment_num):
 
                 (graph_map, batch_variable_map, batch_function_map, 
-                    edge_feature, graph_feat, label) = [self._to_cuda(d[i]) for d in data]
+                    edge_feature, graph_feat, label, _) = [self._to_cuda(d[i]) for d in data]
                 total_example_num += (batch_variable_map.max() + 1)
 
                 self._train_batch(total_loss, optimizer, graph_map, batch_variable_map, batch_function_map, 
@@ -191,7 +194,7 @@ class FactorGraphTrainerBase:
                 for i in range(segment_num):
 
                     (graph_map, batch_variable_map, batch_function_map, 
-                    edge_feature, graph_feat, label) = [self._to_cuda(d[i]) for d in data]
+                    edge_feature, graph_feat, label, _) = [self._to_cuda(d[i]) for d in data]
                     total_example_num += (batch_variable_map.max() + 1).detach().cpu().numpy()
 
                     self._test_batch(error, graph_map, batch_variable_map, batch_function_map, 
@@ -255,10 +258,10 @@ class FactorGraphTrainerBase:
                 for i in range(segment_num):
 
                     (graph_map, batch_variable_map, batch_function_map, 
-                    edge_feature, graph_feat, label) = [self._to_cuda(d[i]) for d in data]
+                    edge_feature, graph_feat, label, misc_data) = [self._to_cuda(d[i]) for d in data]
 
                     self._predict_batch(graph_map, batch_variable_map, batch_function_map, 
-                        edge_feature, graph_feat, label, post_processor, batch_replication)
+                        edge_feature, graph_feat, label, misc_data, post_processor, batch_replication)
 
                     del graph_map
                     del batch_variable_map
@@ -272,7 +275,7 @@ class FactorGraphTrainerBase:
                           % (j * 100.0 / test_batch_num), end='\r', file=sys.stderr)
 
     def _predict_batch(self, graph_map, batch_variable_map, batch_function_map, 
-        edge_feature, graph_feat, label, post_processor, batch_replication):
+        edge_feature, graph_feat, label, misc_data, post_processor, batch_replication):
 
         edge_num = graph_map.size(1)
 
@@ -289,7 +292,7 @@ class FactorGraphTrainerBase:
 
             if post_processor is not None and callable(post_processor):
                 message = post_processor(_module(model), prediction, graph_map,
-                    batch_variable_map, batch_function_map, edge_feature, graph_feat, label)
+                    batch_variable_map, batch_function_map, edge_feature, graph_feat, label, misc_data)
                 print(message)
 
             for p in prediction:

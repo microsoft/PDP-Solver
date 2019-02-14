@@ -21,7 +21,7 @@ class DynamicBatchDivider(object):
         self.limit = limit
         self.hidden_dim = hidden_dim
 
-    def divide(self, variable_num, function_num, graph_map, edge_feature, graph_feature, label):
+    def divide(self, variable_num, function_num, graph_map, edge_feature, graph_feature, label, misc_data):
         batch_size = len(variable_num)
         edge_num = [len(n) for n in edge_feature]
 
@@ -31,6 +31,7 @@ class DynamicBatchDivider(object):
         variable_num_list = []
         function_num_list = []
         label_list = []
+        misc_data_list = []
 
         if (self.limit // (max(edge_num) * self.hidden_dim)) >= batch_size:
             if graph_feature[0] is None:
@@ -43,6 +44,7 @@ class DynamicBatchDivider(object):
             variable_num_list = [variable_num]
             function_num_list = [function_num]
             label_list = [label]
+            misc_data_list = [misc_data]
 
         else:
 
@@ -65,10 +67,11 @@ class DynamicBatchDivider(object):
                 function_num_list += [[function_num[j] for j in ind]]
                 graph_map_list += [[graph_map[j] for j in ind]]
                 label_list += [[label[j] for j in ind]]
+                misc_data_list += [[misc_data[j] for j in ind]]
 
                 i += allowed_batch_size
 
-        return variable_num_list, function_num_list, graph_map_list, edge_feature_list, graph_feature_list, label_list
+        return variable_num_list, function_num_list, graph_map_list, edge_feature_list, graph_feature_list, label_list, misc_data_list
 
 
 ###############################################################
@@ -87,7 +90,7 @@ class FactorGraphDataset(data.Dataset):
 
         if self._generator is None:
             with open(self._input_file, 'r') as fh_input:
-                self._row_num = len(fh_input.readlines()) - 1
+                self._row_num = len(fh_input.readlines())
 
         self.batch_divider = DynamicBatchDivider(limit, hidden_dim)
 
@@ -126,15 +129,19 @@ class FactorGraphDataset(data.Dataset):
         graph_map = np.stack((variable_ind, function_ind))
         alpha = float(function_num) / variable_num
 
-        return (variable_num, function_num, graph_map, edge_feature, None, float(input_data[3]))
+        misc_data = []
+        if len(input_data) > 4:
+            misc_data = input_data[4]
+
+        return (variable_num, function_num, graph_map, edge_feature, None, float(input_data[3]), misc_data)
 
     def dag_collate_fn(self, input_data):
         "Torch dataset loader collation function for factor graph input."
 
-        vn, fn, gm, ef, gf, l = zip(*input_data)
+        vn, fn, gm, ef, gf, l, md = zip(*input_data)
 
-        variable_num, function_num, graph_map, edge_feature, graph_feat, label = \
-            self.batch_divider.divide(vn, fn, gm, ef, gf, l)
+        variable_num, function_num, graph_map, edge_feature, graph_feat, label, misc_data = \
+            self.batch_divider.divide(vn, fn, gm, ef, gf, l, md)
         segment_num = len(variable_num)
 
         graph_feat_batch = []
@@ -177,7 +184,7 @@ class FactorGraphDataset(data.Dataset):
             batch_variable_map_batch += [torch.from_numpy(v_map_b).int()]
             batch_function_map_batch += [torch.from_numpy(f_map_b).int()]
 
-        return graph_map_batch, batch_variable_map_batch, batch_function_map_batch, edge_feature_batch, graph_feat_batch, label_batch
+        return graph_map_batch, batch_variable_map_batch, batch_function_map_batch, edge_feature_batch, graph_feat_batch, label_batch, misc_data
 
     @staticmethod
     def get_loader(input_file, limit, hidden_dim, batch_size, shuffle, num_workers,

@@ -123,7 +123,7 @@ class SatFactorGraphTrainer(factor_graph_trainer.FactorGraphTrainerBase):
         return torch.cat([accuracy, recall, loss_value], 0)
 
     def _post_process_predictions(self, model, prediction, graph_map, 
-        batch_variable_map, batch_function_map, edge_feature, graph_feat, label):
+        batch_variable_map, batch_function_map, edge_feature, graph_feat, label, misc_data):
         "Formats the prediction and the output solution into JSON format."
 
         message = ""
@@ -134,10 +134,12 @@ class SatFactorGraphTrainer(factor_graph_trainer.FactorGraphTrainerBase):
             edge_feature=edge_feature, meta_data=graph_feat).detach().cpu().numpy()
 
         for i in range(output.shape[0]):
-            instance = {}
-            instance['label'] = labs[i, 0]
-            instance['solved'] = output[i].flatten()[0] == 1
-            instance['solution'] = prediction[0][batch_variable_map == i, 0].detach().cpu().numpy().flatten().tolist()
+            instance = {
+                'ID': misc_data[i][0] if len(misc_data[i]) > 0 else "",
+                'label': labs[i, 0],
+                'solved': output[i].flatten()[0] == 1,
+                'solution': (prediction[0][batch_variable_map == i, 0].detach().cpu().numpy().flatten() > 0.5).astype(int).tolist()
+            }
             message += (str(instance).replace("'", '"') + "\n")
             self._counter += 1
 
