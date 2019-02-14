@@ -6,7 +6,7 @@
 import numpy as np
 import hashlib as hl
 from os import listdir
-from os.path import isfile, join, split
+from os.path import isfile, join, split, splitext
 
 from heapq import heappush, heappop
 
@@ -93,6 +93,9 @@ def convert_directory(dimacs_dir, output_file, propagate, only_positive=False):
 
     with open(output_file, 'w') as f:
         for i in range(len(file_list)):
+            if (splitext(file_list[i])[1]).lower() != '.dimacs':
+                continue
+
             if len(file_list[i]) < 8:
                 label = -1
             else:

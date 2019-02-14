@@ -1,0 +1,4 @@
+model_type: "reinforce"
+model_name: "p-prodec2-reinforce-pytorch"
+pi: 0.01
+decimation_probability: 0.5

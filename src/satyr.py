@@ -71,6 +71,13 @@ if __name__ == '__main__':
     # Merge model config and other arguments into one config dict
     config = {**model_config, **args}
 
+    if config['model_type'] == 'p-d-p' or config['model_type'] == 'walk-sat' or config['model_type'] == 'reinforce':
+        config['model_path'] = None
+        config['hidden_dim'] = 3
+
+    if config['model_type'] == 'walk-sat':
+        config['local_search_iteration'] = config['test_recurrence_num']
+
     config['dropout'] = 0
     config['error_dim'] = 1
     config['exploration'] = 0

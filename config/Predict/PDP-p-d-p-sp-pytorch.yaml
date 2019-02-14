@@ -1,0 +1,4 @@
+model_type: "p-d-p"
+model_name: "p-prodec2-sp-pytorch"
+tolerance: 0.02
+t_max: 100

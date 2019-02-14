@@ -1,0 +1,2 @@
+model_type: "walk-sat"
+model_name: "p-prodec2-walksat-pytorch"
