@@ -233,7 +233,7 @@ class SatCNFEvaluator(nn.Module):
         max_sat = torch.mm(b_function_mask_transpose, all_ones)
         batch_values = torch.mm(b_function_mask_transpose, clause_values)
 
-        return (max_sat == batch_values).float()
+        return (max_sat == batch_values).float(), max_sat - batch_values
 
 
 ##########################################################################################################################

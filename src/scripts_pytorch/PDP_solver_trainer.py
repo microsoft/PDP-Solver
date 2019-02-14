@@ -109,7 +109,7 @@ class SatFactorGraphTrainer(factor_graph_trainer.FactorGraphTrainerBase):
     def _compute_evaluation_metrics(self, model, evaluator, prediction, label, graph_map, 
         batch_variable_map, batch_function_map, edge_feature, meta_data):
 
-        output = self._cnf_evaluator(variable_prediction=prediction[0], graph_map=graph_map, 
+        output, _ = self._cnf_evaluator(variable_prediction=prediction[0], graph_map=graph_map, 
             batch_variable_map=batch_variable_map, batch_function_map=batch_function_map, 
             edge_feature=edge_feature, meta_data=meta_data)
 
@@ -129,15 +129,16 @@ class SatFactorGraphTrainer(factor_graph_trainer.FactorGraphTrainerBase):
         message = ""
         labs = label.detach().cpu().numpy()
 
-        output = self._cnf_evaluator(variable_prediction=prediction[0], graph_map=graph_map, 
+        output, unsat_clause_num = [a.detach().cpu().numpy() for a in self._cnf_evaluator(variable_prediction=prediction[0], graph_map=graph_map, 
             batch_variable_map=batch_variable_map, batch_function_map=batch_function_map, 
-            edge_feature=edge_feature, meta_data=graph_feat).detach().cpu().numpy()
+            edge_feature=edge_feature, meta_data=graph_feat)]
 
         for i in range(output.shape[0]):
             instance = {
                 'ID': misc_data[i][0] if len(misc_data[i]) > 0 else "",
                 'label': labs[i, 0],
                 'solved': output[i].flatten()[0] == 1,
+                'unsat_clauses': 
                 'solution': (prediction[0][batch_variable_map == i, 0].detach().cpu().numpy().flatten() > 0.5).astype(int).tolist()
             }
             message += (str(instance).replace("'", '"') + "\n")
@@ -148,7 +149,7 @@ class SatFactorGraphTrainer(factor_graph_trainer.FactorGraphTrainerBase):
     def _check_recurrence_termination(self, active, prediction, sat_problem):
         "De-actives the CNF examples which the model has already found a SAT solution for."
 
-        output = self._cnf_evaluator(variable_prediction=prediction[0], graph_map=sat_problem._graph_map, 
+        output, _ = self._cnf_evaluator(variable_prediction=prediction[0], graph_map=sat_problem._graph_map, 
             batch_variable_map=sat_problem._batch_variable_map, batch_function_map=sat_problem._batch_function_map, 
             edge_feature=sat_problem._edge_feature, meta_data=sat_problem._meta_data)#.detach().cpu().numpy()
 
