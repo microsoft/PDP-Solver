@@ -4,16 +4,15 @@
 # PDP_solver_trainer.py : Implements a factor graph trainer for various types of PDP SAT solvers.
 
 import numpy as np
-import os, yaml, csv, sys
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
+import sys
 
 from model_pytorch import factor_graph_trainer
 from model_pytorch.PDP import solver, util
-from model_pytorch import generators
 
 
 ##########################################################################################################################
@@ -160,120 +159,3 @@ class SatFactorGraphTrainer(factor_graph_trainer.FactorGraphTrainerBase):
             active[active[:, 0], 0] = (dup_batch[active[:, 0], 0] > 0)
         else:
             active[active[:, 0], 0] = (output[active[:, 0], 0] <= 0.5)
-
-
-##########################################################################################################################
-
-def write_to_csv(result_list, file_path):
-    with open(file_path, mode='w', newline='') as f:
-        writer = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-
-        for row in result_list:
-            writer.writerow([row[0], row[1][1, 0]])
-
-def write_to_csv_time(result_list, file_path):
-    with open(file_path, mode='w', newline='') as f:
-        writer = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-
-        for row in result_list:
-            writer.writerow([row[0], row[2]])
-
-def run(random_seed, config_file, is_training, load_model, cpu, reset_step, use_generator, batch_replication):
-    "Runs the train/test/predict procedures."
-    
-    if not use_generator:
-        np.random.seed(random_seed)
-        torch.manual_seed(random_seed)
-
-    # Set the configurations (from either JSON or YAML file)
-    with open(config_file, 'r') as f:
-        config = yaml.load(f)
-
-    # Check if the input path is a list or on
-    if not isinstance(config['train_path'], list):
-        config['train_path'] = [os.path.join(config['train_path'], f) \
-            for f in os.listdir(config['train_path']) if os.path.isfile(os.path.join(config['train_path'], f)) and f.endswith('.json')]
-
-    if not isinstance(config['validation_path'], list):
-        config['validation_path'] = [os.path.join(config['validation_path'], f) \
-            for f in os.listdir(config['validation_path']) if os.path.isfile(os.path.join(config['validation_path'], f)) and f.endswith('.json')]
-
-    print("Training file(s):", file=sys.stderr)
-    print(config['train_path'], file=sys.stderr)
-
-    print("Validation file(s):", file=sys.stderr)
-    print(config['validation_path'], file=sys.stderr)
-
-    best_model_path_base = os.path.join(os.path.relpath(config['model_path']),
-                                        config['model_name'], config['version'], "best")
-
-    last_model_path_base = os.path.join(os.path.relpath(config['model_path']),
-                                        config['model_name'], config['version'], "last")
-
-    if not os.path.exists(best_model_path_base):
-        os.makedirs(best_model_path_base)
-
-    if not os.path.exists(last_model_path_base):
-        os.makedirs(last_model_path_base)
-
-    trainer = SatFactorGraphTrainer(config=config, use_cuda=not cpu)
-
-    # Training
-    if is_training:
-        if config['verbose']:
-            print("Starting the training phase...", file=sys.stderr)
-
-        generator = None
-
-        if use_generator:
-            if config['generator'] == 'modular':
-                generator = generators.ModularCNFGenerator(config['min_k'], config['min_n'], config['max_n'], config['min_q'],
-                    config['max_q'], config['min_c'], config['max_c'], config['min_alpha'], config['max_alpha'])
-            elif config['generator'] == 'v-modular':
-                generator = generators.VariableModularCNFGenerator(config['min_k'], config['max_k'], config['min_n'], config['max_n'], config['min_q'],
-                    config['max_q'], config['min_c'], config['max_c'], config['min_alpha'], config['max_alpha'])
-            else:
-                generator = generators.UniformCNFGenerator(config['min_n'], config['max_n'], config['min_k'], config['max_k'], config['min_alpha'], config['max_alpha'])
-
-        model_list, errors, losses = trainer.train(
-        	train_list=config['train_path'], validation_list=config['validation_path'], 
-            optimizer=optim.Adam(trainer.get_parameter_list(), lr=config['learning_rate'],
-            weight_decay=config['weight_decay']), last_export_path_base=last_model_path_base,
-            best_export_path_base=best_model_path_base, metric_index=config['metric_index'],
-            load_model=load_model, reset_step=reset_step, generator=generator, 
-            train_epoch_size=config['train_epoch_size'])
-
-    if config['verbose']:
-        print("\nStarting the test/prediction phase...", file=sys.stderr)
-
-    for test_files in config['test_path']:
-        if config['verbose']:
-            print("\nTesting " + test_files, file=sys.stderr)
-
-        if load_model == "last":
-            import_path_base = last_model_path_base
-        elif load_model == "best":
-            import_path_base = best_model_path_base
-        else:
-            import_path_base = None
-
-        result = trainer.test(test_list=test_files, import_path_base=import_path_base, batch_replication=batch_replication)
-
-        if config['verbose']:
-            for row in result:
-                filename, errors, _ = row
-                print('Dataset: ' + filename, file=sys.stderr)
-                print("Accuracy: \t%s" % (1 - errors[0]), file=sys.stderr)
-                print("Recall: \t%s" % (1 - errors[1]), file=sys.stderr)
-
-        if os.path.isdir(test_files):
-            write_to_csv(result, os.path.join(test_files, config['model_type'] + '_' + config['model_name'] + '_' + config['version'] + '-results.csv'))
-            write_to_csv_time(result, os.path.join(test_files, config['model_type'] + '_' + config['model_name'] + '_' + config['version'] + '-results-time.csv'))
-
-        ## Optionally generating predictions
-        # if config['verbose']:
-        #     print("\nGenerating prediction file for " + test_files[0], file=sys.stderr)
-
-        # trainer._counter = 0
-        # trainer.predict(test_list=test_files, import_path_base=last_model_path_base if load_model == "last" else best_model_path_base, 
-        #     post_processor=trainer._post_process_predictions, batch_replication=batch_replication)
