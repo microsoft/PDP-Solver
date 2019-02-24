@@ -1,6 +1,6 @@
 model_name: "p-prodec2-modular-variable-pytorch"
 model_type: "np-nd-np"
-version: "xx.0g"
+version: "1.0g"
 continuous_train: false
 cache_data: false
 has_meta_data: false # true
