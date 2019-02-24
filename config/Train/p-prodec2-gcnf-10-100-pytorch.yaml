@@ -1,6 +1,6 @@
 model_name: "p-prodec2-gcnf-10-100-pytorch"
 model_type: "np-nd-np"
-version: "x"
+version: "2.0g"
 continuous_train: false
 cache_data: false
 has_meta_data: false # true

@@ -3,7 +3,7 @@
 
 # factor_graph_trainer.py : Defines the trainer base class for the PDP framework.
 
-import os, sys
+import os
 import time
 import math
 import multiprocessing
@@ -25,16 +25,17 @@ class FactorGraphTrainerBase:
     "Base class of the Factor Graph trainer pipeline (abstract)."
 
     # pylint: disable=unused-argument
-    def __init__(self, config, has_meta_data, error_dim, loss, evaluator, use_cuda):
+    def __init__(self, config, has_meta_data, error_dim, loss, evaluator, use_cuda, logger):
 
         self._config = config
+        self._logger = logger
         self._use_cuda = use_cuda and torch.cuda.is_available()
         
         if config['verbose']:
             if self._use_cuda:
-                print('Using GPU...', file=sys.stderr)
+                self._logger.info('Using GPU...')
             else:
-                print('Using CPU...', file=sys.stderr)
+                self._logger.info('Using CPU...')
         
         self._device = torch.device("cuda" if self._use_cuda else "cpu")
 
@@ -44,7 +45,7 @@ class FactorGraphTrainerBase:
         self._evaluator = evaluator
 
         if config['verbose']:
-            print("The number of CPU cores is", self._num_cores, file=sys.stderr)
+            self._logger.info("The number of CPU cores is %s." % self._num_cores)
 
         torch.set_num_threads(self._num_cores)
 
@@ -131,7 +132,7 @@ class FactorGraphTrainerBase:
                 if self._config['verbose']:
                     print("Training epoch with batch of size {:4d} ({:4d}/{:4d}): {:3d}% complete...".format(
                         batch_variable_map.max().item(), total_example_num % self._config['batch_size'], self._config['batch_size'],
-                        int(j * 100.0 / train_batch_num)), end='\r', file=sys.stderr)
+                        int(j * 100.0 / train_batch_num)), end='\r')
 
                 del graph_map
                 del batch_variable_map
@@ -203,7 +204,7 @@ class FactorGraphTrainerBase:
                     if self._config['verbose']:
                         print("Testing epoch with batch of size {:4d} ({:4d}/{:4d}): {:3d}% complete...".format(
                             batch_variable_map.max().item(), total_example_num % self._config['batch_size'], self._config['batch_size'],
-                            int(j * 100.0 / test_batch_num)), end='\r', file=sys.stderr)
+                            int(j * 100.0 / test_batch_num)), end='\r')
 
                 del graph_map
                 del batch_variable_map
@@ -270,9 +271,9 @@ class FactorGraphTrainerBase:
                     del graph_feat
                     del label
 
-                if self._config['verbose']:
-                    print("Predicting epoch: %3d%% complete..."
-                          % (j * 100.0 / test_batch_num), end='\r', file=sys.stderr)
+                # if self._config['verbose']:
+                #     print("Predicting epoch: %3d%% complete..."
+                #           % (j * 100.0 / test_batch_num), end='\r')
 
     def _predict_batch(self, graph_map, batch_variable_map, batch_function_map, 
         edge_feature, graph_feat, label, misc_data, post_processor, batch_replication):
@@ -383,8 +384,8 @@ class FactorGraphTrainerBase:
                             np.array_str(errors[:, i, epoch, rep].flatten()),
                             name, losses[i, epoch, rep])
 
-                    print('Rep {:2d}, Epoch {:2d}: {:s}'.format(rep + 1, epoch + 1, message), file=sys.stderr)
-                    print('Time spent: %s seconds' % duration, file=sys.stderr)
+                    self._logger.info('Rep {:2d}, Epoch {:2d}: {:s}'.format(rep + 1, epoch + 1, message))
+                    self._logger.info('Time spent: %s seconds' % duration)
 
         if self._use_cuda:
             torch.backends.cudnn.benchmark = False
@@ -438,8 +439,8 @@ class FactorGraphTrainerBase:
                     message += '{:s}, dataset:{:s} error={:s}|'.format(
                         _module(model)._name, file, np.array_str(error[:, i].flatten()))
 
-                print(message, file=sys.stderr)
-                print('Time spent: %s seconds' % duration, file=sys.stderr)
+                self._logger.info(message)
+                self._logger.info('Time spent: %s seconds' % duration)
 
             result += [[file, error, duration]]
 
@@ -466,4 +467,4 @@ class FactorGraphTrainerBase:
             torch.cuda.empty_cache()
 
         if self._config['verbose']:
-            print('Time spent: %s seconds' % duration, file=sys.stderr)
+            self._logger.info('Time spent: %s seconds' % duration)
