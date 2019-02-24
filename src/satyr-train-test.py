@@ -6,8 +6,9 @@
 import numpy as np
 import torch
 import torch.optim as optim
+import logging
 
-import argparse, os, yaml, csv, sys
+import argparse, os, yaml, csv
 from scripts_pytorch import PDP_solver_trainer, generators
 
 ##########################################################################################################################
@@ -37,6 +38,11 @@ def run(random_seed, config_file, is_training, load_model, cpu, reset_step, use_
     with open(config_file, 'r') as f:
         config = yaml.load(f)
 
+    # Set the logger
+    format = '[%(levelname)s] %(asctime)s - %(name)s: %(message)s'
+    logging.basicConfig(level=logging.DEBUG, format=format)
+    logger = logging.getLogger(config['model_name'] + ' (' + config['version'] + ')')
+
     # Check if the input path is a list or on
     if not isinstance(config['train_path'], list):
         config['train_path'] = [os.path.join(config['train_path'], f) \
@@ -46,11 +52,12 @@ def run(random_seed, config_file, is_training, load_model, cpu, reset_step, use_
         config['validation_path'] = [os.path.join(config['validation_path'], f) \
             for f in os.listdir(config['validation_path']) if os.path.isfile(os.path.join(config['validation_path'], f)) and f.endswith('.json')]
 
-    print("Training file(s):", file=sys.stderr)
-    print(config['train_path'], file=sys.stderr)
-
-    print("Validation file(s):", file=sys.stderr)
-    print(config['validation_path'], file=sys.stderr)
+    if config['verbose']:
+        if use_generator:
+            logger.info("Generating training examples via %s generator." % config['generator'])
+        else:
+            logger.info("Training file(s): %s" % config['train_path'])
+        logger.info("Validation file(s): %s" % config['validation_path'])
 
     best_model_path_base = os.path.join(os.path.relpath(config['model_path']),
                                         config['model_name'], config['version'], "best")
@@ -64,12 +71,12 @@ def run(random_seed, config_file, is_training, load_model, cpu, reset_step, use_
     if not os.path.exists(last_model_path_base):
         os.makedirs(last_model_path_base)
 
-    trainer = PDP_solver_trainer.SatFactorGraphTrainer(config=config, use_cuda=not cpu)
+    trainer = PDP_solver_trainer.SatFactorGraphTrainer(config=config, use_cuda=not cpu, logger=logger)
 
     # Training
     if is_training:
         if config['verbose']:
-            print("Starting the training phase...", file=sys.stderr)
+            logger.info("Starting the training phase...")
 
         generator = None
 
@@ -92,11 +99,11 @@ def run(random_seed, config_file, is_training, load_model, cpu, reset_step, use_
             train_epoch_size=config['train_epoch_size'])
 
     if config['verbose']:
-        print("\nStarting the test/prediction phase...", file=sys.stderr)
+        logger.info("Starting the test phase...")
 
     for test_files in config['test_path']:
         if config['verbose']:
-            print("\nTesting " + test_files, file=sys.stderr)
+            logger.info("Testing " + test_files)
 
         if load_model == "last":
             import_path_base = last_model_path_base
@@ -105,14 +112,15 @@ def run(random_seed, config_file, is_training, load_model, cpu, reset_step, use_
         else:
             import_path_base = None
 
-        result = trainer.test(test_list=test_files, import_path_base=import_path_base, batch_replication=batch_replication)
+        result = trainer.test(test_list=test_files, import_path_base=import_path_base, 
+                        batch_replication=batch_replication)
 
         if config['verbose']:
             for row in result:
                 filename, errors, _ = row
-                print('Dataset: ' + filename, file=sys.stderr)
-                print("Accuracy: \t%s" % (1 - errors[0]), file=sys.stderr)
-                print("Recall: \t%s" % (1 - errors[1]), file=sys.stderr)
+                print('Dataset: ' + filename)
+                print("Accuracy: \t%s" % (1 - errors[0]))
+                print("Recall: \t%s" % (1 - errors[1]))
 
         if os.path.isdir(test_files):
             write_to_csv(result, os.path.join(test_files, config['model_type'] + '_' + config['model_name'] + '_' + config['version'] + '-results.csv'))

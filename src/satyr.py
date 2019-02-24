@@ -4,7 +4,7 @@
 # satyr.py : The main script to run a trained PDP solver against a test dataset.
 
 import argparse
-import yaml, sys, os
+import yaml, os, logging
 import numpy as np
 import torch
 from datetime import datetime
@@ -12,19 +12,19 @@ from scripts_pytorch import PDP_solver_trainer
 import dimacs2json
 
 
-def run(config):
+def run(config, logger):
     "Runs the prediction engine."
     
     np.random.seed(config['random_seed'])
     torch.manual_seed(config['random_seed'])
 
     if config['verbose']:
-        print("\nBuilding the computational graph...", file=sys.stderr)
+        logger.info("Building the computational graph...")
 
-    predicter = PDP_solver_trainer.SatFactorGraphTrainer(config=config, use_cuda=not config['cpu_mode'])
+    predicter = PDP_solver_trainer.SatFactorGraphTrainer(config=config, use_cuda=not config['cpu_mode'], logger=logger)
 
     if config['verbose']:
-        print("\nStarting the prediction phase...", file=sys.stderr)
+        logger.info("Starting the prediction phase...")
 
     predicter._counter = 0
     predicter.predict(test_list=config['test_path'], import_path_base=config['model_path'], 
@@ -53,9 +53,15 @@ if __name__ == '__main__':
     with open(args['model_config'], 'r') as f:
         model_config = yaml.load(f)
 
+    # Set the logger
+    format = '[%(levelname)s] %(asctime)s - %(name)s: %(message)s'
+    logging.basicConfig(level=logging.DEBUG, format=format)
+    logger = logging.getLogger(model_config['model_name'])
+
     # Convert DIMACS input files into JSON
     if args['dimacs']:
-        print("\nConverting DIMACS files into JSON...", file=sys.stderr)
+        if args['verbose']:
+            logger.info("Converting DIMACS files into JSON...")
         temp_file_name = 'temp_problem_file.json'
         
         if os.path.isfile(args['test_path']):
@@ -83,7 +89,7 @@ if __name__ == '__main__':
     config['exploration'] = 0
 
     # Run the prediction engine
-    run(config)
+    run(config, logger)
 
     if args['dimacs']:
         os.remove(temp_file_name)

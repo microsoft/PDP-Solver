@@ -35,9 +35,10 @@ class Perceptron(nn.Module):
 class SatFactorGraphTrainer(factor_graph_trainer.FactorGraphTrainerBase):
     "Implements a factor graph trainer for various types of PDP SAT solvers."
 
-    def __init__(self, config, use_cuda):
+    def __init__(self, config, use_cuda, logger):
         super(SatFactorGraphTrainer, self).__init__(config=config, 
-            has_meta_data=False, error_dim=config['error_dim'], loss=None, evaluator=nn.L1Loss(), use_cuda=use_cuda)
+            has_meta_data=False, error_dim=config['error_dim'], loss=None, 
+            evaluator=nn.L1Loss(), use_cuda=use_cuda, logger=logger)
 
         self._eps = 1e-8 * torch.ones(1, device=self._device)
         self._loss_evaluator = util.SatLossEvaluator(alpha = self._config['exploration'], device = self._device)
@@ -94,7 +95,8 @@ class SatFactorGraphTrainer(factor_graph_trainer.FactorGraphTrainerBase):
                     pi=config['pi'], decimation_probability=config['decimation_probability'],
                     local_search_iterations=config['local_search_iteration'], epsilon=config['epsilon'])]
 
-        print("The model parameter count is %d.\n" % model_list[0].parameter_count(), file=sys.stderr)
+        if config['verbose']:
+            self._logger.info("The model parameter count is %d." % model_list[0].parameter_count())
         return model_list
 
     def _compute_loss(self, model, loss, prediction, label, graph_map, batch_variable_map, 
