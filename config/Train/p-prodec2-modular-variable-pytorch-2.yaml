@@ -1,6 +1,6 @@
 model_name: "p-prodec2-modular-variable-pytorch-2"
 model_type: "np-nd-np"
-version: "1.0g"
+version: "2.0g"
 continuous_train: false
 cache_data: false
 has_meta_data: false # true
@@ -30,14 +30,14 @@ exploration: 0.1
 verbose: true
 randomized: true
 train_inner_recurrence_num: 1
-train_outer_recurrence_num: 20
+train_outer_recurrence_num: 10
 test_recurrence_num: 20
 max_cache_size: 100000
 dropout: 0.2
 clip_norm: 0.65
 weight_decay: 0.0000000001
 loss_sharpness: 5
-train_batch_limit: 2600000
+train_batch_limit: 4000000
 test_batch_limit: 30000000
 generator: "v-modular"
 min_n: 5
@@ -52,3 +52,4 @@ min_c: 10
 max_c: 20
 local_search_iteration: 0
 epsilon: 0.5
+lambda: 0.95

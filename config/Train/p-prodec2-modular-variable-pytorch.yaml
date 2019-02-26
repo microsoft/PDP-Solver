@@ -52,3 +52,4 @@ min_c: 10
 max_c: 20
 local_search_iteration: 100
 epsilon: 0.5
+lambda: 1

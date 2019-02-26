@@ -43,6 +43,7 @@ class FactorGraphTrainerBase:
         self._num_cores = multiprocessing.cpu_count()
         self._loss = loss
         self._evaluator = evaluator
+        self._lambda = torch.tensor([self._config['lambda']], device=self._device)
 
         if config['verbose']:
             self._logger.info("The number of CPU cores is %s." % self._num_cores)
@@ -166,9 +167,10 @@ class FactorGraphTrainerBase:
                     meta_data=graph_feat, is_training=True, iteration_num=self._config['train_inner_recurrence_num'])
 
                 loss += self._compute_loss(
-                    model=_module(model), loss=self._loss, prediction=prediction,
-                    label=label, graph_map=graph_map, batch_variable_map=batch_variable_map, 
-                    batch_function_map=batch_function_map, edge_feature=edge_feature, meta_data=graph_feat)# * (t + 1).float()
+                            model=_module(model), loss=self._loss, prediction=prediction,
+                            label=label, graph_map=graph_map, batch_variable_map=batch_variable_map, 
+                            batch_function_map=batch_function_map, edge_feature=edge_feature, meta_data=graph_feat) * \
+                    self._lambda.pow((self._config['train_outer_recurrence_num'] - t - 1).float())
 
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), self._config['clip_norm'])

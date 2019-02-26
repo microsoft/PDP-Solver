@@ -49,3 +49,4 @@ local_search_iteration: 1000
 epsilon: 0.5
 pi: 0.01
 decimation_probability: 0.5
+lambda: 1

@@ -52,3 +52,4 @@ min_k: 2
 max_k: 10
 local_search_iteration: 10
 epsilon: 0.05
+lambda: 1

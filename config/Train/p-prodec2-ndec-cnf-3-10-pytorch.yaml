@@ -54,3 +54,4 @@ local_search_iteration: 10
 epsilon: 0.05
 tolerance: 0.02
 t_max: 1
+lambda: 1
