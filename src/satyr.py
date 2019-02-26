@@ -4,7 +4,7 @@
 # satyr.py : The main script to run a trained PDP solver against a test dataset.
 
 import argparse
-import yaml, os, logging
+import yaml, os, logging, sys
 import numpy as np
 import torch
 from datetime import datetime
@@ -12,7 +12,7 @@ from scripts_pytorch import PDP_solver_trainer
 import dimacs2json
 
 
-def run(config, logger):
+def run(config, logger, output):
     "Runs the prediction engine."
     
     np.random.seed(config['random_seed'])
@@ -27,8 +27,13 @@ def run(config, logger):
         logger.info("Starting the prediction phase...")
 
     predicter._counter = 0
-    predicter.predict(test_list=config['test_path'], import_path_base=config['model_path'], 
-        post_processor=predicter._post_process_predictions, batch_replication=config['batch_replication'])
+    if output == '':
+        predicter.predict(test_list=config['test_path'], out_file=sys.stdout, import_path_base=config['model_path'], 
+            post_processor=predicter._post_process_predictions, batch_replication=config['batch_replication'])
+    else:
+        with open(output, 'w') as file:
+            predicter.predict(test_list=config['test_path'], out_file=file, import_path_base=config['model_path'], 
+                post_processor=predicter._post_process_predictions, batch_replication=config['batch_replication'])
 
 
 if __name__ == '__main__':
@@ -46,6 +51,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--cpu_mode', help='Run on CPU', action='store_true')
     parser.add_argument('-d', '--dimacs', help='The input folder contains DIMACS files', action='store_true')
     parser.add_argument('-s', '--random_seed', help='Random seed', type=int, default=int(datetime.now().microsecond))
+    parser.add_argument('-o', '--output', help='The JSON output file', default='')
 
     args = vars(parser.parse_args())
 
@@ -89,7 +95,9 @@ if __name__ == '__main__':
     config['exploration'] = 0
 
     # Run the prediction engine
-    run(config, logger)
+    run(config, logger, config['output'])
 
     if args['dimacs']:
         os.remove(temp_file_name)
+
+    print('')

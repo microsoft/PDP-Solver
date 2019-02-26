@@ -43,7 +43,6 @@ class FactorGraphTrainerBase:
         self._num_cores = multiprocessing.cpu_count()
         self._loss = loss
         self._evaluator = evaluator
-        self._lambda = torch.tensor([self._config['lambda']], device=self._device)
 
         if config['verbose']:
             self._logger.info("The number of CPU cores is %s." % self._num_cores)
@@ -151,6 +150,7 @@ class FactorGraphTrainerBase:
                     edge_feature, graph_feat, label):
 
         optimizer.zero_grad()
+        lambda_value = torch.tensor([self._config['lambda']], device=self._device)
 
         for (i, model) in enumerate(self._model_list):
 
@@ -170,7 +170,7 @@ class FactorGraphTrainerBase:
                             model=_module(model), loss=self._loss, prediction=prediction,
                             label=label, graph_map=graph_map, batch_variable_map=batch_variable_map, 
                             batch_function_map=batch_function_map, edge_feature=edge_feature, meta_data=graph_feat) * \
-                    self._lambda.pow((self._config['train_outer_recurrence_num'] - t - 1).float())
+                    lambda_value.pow((self._config['train_outer_recurrence_num'] - t - 1).float())
 
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), self._config['clip_norm'])
@@ -249,7 +249,7 @@ class FactorGraphTrainerBase:
             for s in state:
                 del s
 
-    def _predict_epoch(self, validation_loader, post_processor, batch_replication):
+    def _predict_epoch(self, validation_loader, post_processor, batch_replication, file):
 
         test_batch_num = math.ceil(len(validation_loader.dataset) / self._config['batch_size'])
 
@@ -264,7 +264,7 @@ class FactorGraphTrainerBase:
                     edge_feature, graph_feat, label, misc_data) = [self._to_cuda(d[i]) for d in data]
 
                     self._predict_batch(graph_map, batch_variable_map, batch_function_map, 
-                        edge_feature, graph_feat, label, misc_data, post_processor, batch_replication)
+                        edge_feature, graph_feat, label, misc_data, post_processor, batch_replication, file)
 
                     del graph_map
                     del batch_variable_map
@@ -278,7 +278,7 @@ class FactorGraphTrainerBase:
                 #           % (j * 100.0 / test_batch_num), end='\r')
 
     def _predict_batch(self, graph_map, batch_variable_map, batch_function_map, 
-        edge_feature, graph_feat, label, misc_data, post_processor, batch_replication):
+        edge_feature, graph_feat, label, misc_data, post_processor, batch_replication, file):
 
         edge_num = graph_map.size(1)
 
@@ -296,7 +296,7 @@ class FactorGraphTrainerBase:
             if post_processor is not None and callable(post_processor):
                 message = post_processor(_module(model), prediction, graph_map,
                     batch_variable_map, batch_function_map, edge_feature, graph_feat, label, misc_data)
-                print(message)
+                print(message, file=file)
 
             for p in prediction:
                 del p
@@ -448,7 +448,7 @@ class FactorGraphTrainerBase:
 
         return result
 
-    def predict(self, test_list, import_path_base=None, post_processor=None, batch_replication=1):
+    def predict(self, test_list, out_file, import_path_base=None, post_processor=None, batch_replication=1):
         "Produces predictions for the trained PDP model."
 
         # Build the input pipeline
@@ -461,7 +461,7 @@ class FactorGraphTrainerBase:
             self._load(import_path_base)
 
         start_time = time.time()
-        self._predict_epoch(test_loader, post_processor, batch_replication)
+        self._predict_epoch(test_loader, post_processor, batch_replication, out_file)
 
         duration = time.time() - start_time
 

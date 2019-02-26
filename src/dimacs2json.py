@@ -107,7 +107,7 @@ def convert_directory(dimacs_dir, output_file, propagate, only_positive=False):
 
             bc = CompactDimacs(file_list[i], label, propagate)
             f.write(str(bc.to_json()).replace("'", '"') + '\n')
-            print("Generating topsort file: %6.2f%% complete..." % (
+            print("Generating JSON input file: %6.2f%% complete..." % (
                 (i + 1) * 100.0 / len(file_list)), end='\r', file=sys.stderr)
 
 def convert_file(file_name, output_file, propagate):
