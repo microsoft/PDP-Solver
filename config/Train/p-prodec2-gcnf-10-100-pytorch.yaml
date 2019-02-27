@@ -1,8 +1,6 @@
 model_name: "p-prodec2-gcnf-10-100-pytorch"
 model_type: "np-nd-np"
 version: "2.0g"
-continuous_train: false
-cache_data: false
 has_meta_data: false # true
 train_path: ["../../datasets/SAT/p-cnf-3-10-large.json"]
 validation_path: ["../../datasets/SAT/cnf-10.json"]
@@ -10,7 +8,6 @@ test_path: ["../../datasets/SAT/M-4SAT-validation-2/M-4SAT-validation-2_0_7.0_10
 model_path: "../../Trained-models/SAT"
 repetition_num: 1
 train_epoch_size: 40000
-test_epoch_size: 40000
 epoch_num: 500
 label_dim: 1
 edge_feature_dim: 1
@@ -24,7 +21,6 @@ agg_hidden_dim: 100  # 135
 mem_agg_hidden_dim: 50  # 50
 classifier_dim: 50  # 100
 batch_size: 5000
-batch_expansion: 1
 learning_rate: 0.0001
 exploration: 0.1
 verbose: true
