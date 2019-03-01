@@ -1,7 +1,8 @@
-# Copyright (c) Microsoft. All rights reserved.
-# Licensed under the MIT license. See LICENSE.md file in the project root for full license information.
+"""Defines the utility functionalities for the PDP framework."""
 
-# util.py : Defines the utility functionalities for the PDP framework.
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE.md file
+# in the project root for full license information.
 
 import torch
 import torch.nn as nn
@@ -12,7 +13,8 @@ class MessageAggregator(nn.Module):
     "Implements a deep set function for message aggregation at variable and function nodes."
 
     def __init__(self, device, input_dimension, output_dimension, mem_hidden_dimension,
-                 mem_agg_hidden_dimension, agg_hidden_dimension, feature_dimension, include_self_message):
+                 mem_agg_hidden_dimension, agg_hidden_dimension, feature_dimension,
+                 include_self_message):
 
         super(MessageAggregator, self).__init__()
         self._device = device
@@ -35,8 +37,8 @@ class MessageAggregator(nn.Module):
             if mem_hidden_dimension <= 0:
                 mem_agg_hidden_dimension = input_dimension
 
-            self._W1_a = nn.Linear(
-                mem_agg_hidden_dimension + feature_dimension, agg_hidden_dimension, bias=True)  # .to(self._device)
+            self._W1_a = nn.Linear(mem_agg_hidden_dimension + feature_dimension,
+                                   agg_hidden_dimension, bias=True)  # .to(self._device)
 
             self._W2_a = nn.Linear(
                 agg_hidden_dimension, output_dimension, bias=False)  # .to(self._device)
@@ -95,7 +97,8 @@ class MultiLayerPerceptron(nn.Module):
             self._inner_layers += [nn.Linear(layer_dims[i], layer_dims[i + 1])]
             self._module_list.append(self._inner_layers[i])
 
-        self._output_layer = nn.Linear(layer_dims[self._layer_num - 1], layer_dims[self._layer_num], bias=False)
+        self._output_layer = nn.Linear(
+            layer_dims[self._layer_num - 1], layer_dims[self._layer_num], bias=False)
         self._module_list.append(self._output_layer)
 
     def forward(self, inp):
@@ -107,7 +110,7 @@ class MultiLayerPerceptron(nn.Module):
         return F.sigmoid(self._output_layer(x))
 
 
-##########################################################################################################################
+###############################################################
 
 
 class SatLossEvaluator(nn.Module):
@@ -134,15 +137,17 @@ class SatLossEvaluator(nn.Module):
         function_sparse_ind = torch.stack([graph_map[1, :].long(), edge_num_range])
 
         if device.type == 'cuda':
-            variable_mask = torch.cuda.sparse.FloatTensor(variable_sparse_ind, edge_feature.squeeze(1), 
+            variable_mask = torch.cuda.sparse.FloatTensor(
+                variable_sparse_ind, edge_feature.squeeze(1),
                 torch.Size([edge_num, variable_num]), device=device)
-            function_mask = torch.cuda.sparse.FloatTensor(function_sparse_ind, all_ones, 
-                torch.Size([function_num, edge_num]), device=device)
+            function_mask = torch.cuda.sparse.FloatTensor(
+                function_sparse_ind, all_ones, torch.Size([function_num, edge_num]), device=device)
         else:
-            variable_mask = torch.sparse.FloatTensor(variable_sparse_ind, edge_feature.squeeze(1), 
+            variable_mask = torch.sparse.FloatTensor(
+                variable_sparse_ind, edge_feature.squeeze(1),
                 torch.Size([edge_num, variable_num]), device=device)
-            function_mask = torch.sparse.FloatTensor(function_sparse_ind, all_ones, 
-                torch.Size([function_num, edge_num]), device=device)
+            function_mask = torch.sparse.FloatTensor(
+                function_sparse_ind, all_ones, torch.Size([function_num, edge_num]), device=device)
 
         return variable_mask, function_mask
 
@@ -160,14 +165,18 @@ class SatLossEvaluator(nn.Module):
         function_sparse_ind = torch.stack([function_range, batch_function_map.long()])
 
         if device.type == 'cuda':
-            variable_mask = torch.cuda.sparse.FloatTensor(variable_sparse_ind, variable_all_ones, 
+            variable_mask = torch.cuda.sparse.FloatTensor(
+                variable_sparse_ind, variable_all_ones,
                 torch.Size([variable_num, batch_size]), device=device)
-            function_mask = torch.cuda.sparse.FloatTensor(function_sparse_ind, function_all_ones, 
+            function_mask = torch.cuda.sparse.FloatTensor(
+                function_sparse_ind, function_all_ones,
                 torch.Size([function_num, batch_size]), device=device)
         else:
-            variable_mask = torch.sparse.FloatTensor(variable_sparse_ind, variable_all_ones, 
+            variable_mask = torch.sparse.FloatTensor(
+                variable_sparse_ind, variable_all_ones,
                 torch.Size([variable_num, batch_size]), device=device)
-            function_mask = torch.sparse.FloatTensor(function_sparse_ind, function_all_ones, 
+            function_mask = torch.sparse.FloatTensor(
+                function_sparse_ind, function_all_ones,
                 torch.Size([function_num, batch_size]), device=device)
 
         variable_mask_transpose = variable_mask.transpose(0, 1)
@@ -175,14 +184,15 @@ class SatLossEvaluator(nn.Module):
 
         return (variable_mask, variable_mask_transpose, function_mask, function_mask_transpose)
 
-    def forward(self, variable_prediction, label, graph_map, batch_variable_map, 
-        batch_function_map, edge_feature, meta_data, global_step, eps, max_coeff, loss_sharpness):
+    def forward(self, variable_prediction, label, graph_map, batch_variable_map,
+                batch_function_map, edge_feature, meta_data, global_step, eps,
+                max_coeff, loss_sharpness):
 
-        coeff = torch.min(global_step.pow(self._alpha), torch.tensor([max_coeff], device=self._device))
+        coeff = torch.min(global_step.pow(self._alpha),
+                          torch.tensor([max_coeff], device=self._device))
 
-        signed_variable_mask_transpose, function_mask = \
-            SatLossEvaluator.compute_masks(graph_map, batch_variable_map, batch_function_map,
-            edge_feature, self._device)
+        signed_variable_mask_transpose, function_mask = SatLossEvaluator.compute_masks(
+            graph_map, batch_variable_map, batch_function_map, edge_feature, self._device)
 
         edge_values = torch.mm(signed_variable_mask_transpose, variable_prediction)
         edge_values = edge_values + (1 - edge_feature) / 2
@@ -197,7 +207,7 @@ class SatLossEvaluator(nn.Module):
         return torch.mean(SatLossEvaluator.safe_log(clause_value, eps))
 
 
-##########################################################################################################################
+###############################################################
 
 
 class SatCNFEvaluator(nn.Module):
@@ -207,20 +217,19 @@ class SatCNFEvaluator(nn.Module):
         super(SatCNFEvaluator, self).__init__()
         self._device = device
 
-    def forward(self, variable_prediction, graph_map, batch_variable_map, 
-        batch_function_map, edge_feature, meta_data):
+    def forward(self, variable_prediction, graph_map, batch_variable_map,
+                batch_function_map, edge_feature, meta_data):
 
-        variable_num = batch_variable_map.size(0)
+        # variable_num = batch_variable_map.size(0)
         function_num = batch_function_map.size(0)
-        batch_size = (batch_variable_map.max() + 1).item()
+        # batch_size = (batch_variable_map.max() + 1).item()
         all_ones = torch.ones(function_num, 1, device=self._device)
 
-        signed_variable_mask_transpose, function_mask = \
-            SatLossEvaluator.compute_masks(graph_map, batch_variable_map, batch_function_map, 
-            edge_feature, self._device)
+        signed_variable_mask_transpose, function_mask = SatLossEvaluator.compute_masks(
+            graph_map, batch_variable_map, batch_function_map, edge_feature, self._device)
 
-        b_variable_mask, b_variable_mask_transpose, b_function_mask, b_function_mask_transpose = \
-            SatLossEvaluator.compute_batch_mask(
+        (_b_variable_mask, _b_variable_mask_transpose, _b_function_mask,
+         b_function_mask_transpose) = SatLossEvaluator.compute_batch_mask(
             batch_variable_map, batch_function_map, self._device)
 
         edge_values = torch.mm(signed_variable_mask_transpose, variable_prediction)
@@ -236,7 +245,7 @@ class SatCNFEvaluator(nn.Module):
         return (max_sat == batch_values).float(), max_sat - batch_values
 
 
-##########################################################################################################################
+###############################################################
 
 
 class PerceptronTanh(nn.Module):
@@ -251,36 +260,43 @@ class PerceptronTanh(nn.Module):
         return F.tanh(self._layer2(F.relu(self._layer1(inp))))
 
 
-##########################################################################################################################
+###############################################################
 
 
 def sparse_argmax(x, mask, device):
     "Implements the exact, memory-inefficient argmax operation for a row vector input."
 
     if device.type == 'cuda':
-        dense_mat = torch.cuda.sparse.FloatTensor(mask._indices(), x - x.min() + 1, mask.size(), device=device).to_dense()
+        dense_mat = torch.cuda.sparse.FloatTensor(
+            mask._indices(), x - x.min() + 1, mask.size(), device=device).to_dense()
     else:
-        dense_mat = torch.sparse.FloatTensor(mask._indices(), x - x.min() + 1, mask.size(), device=device).to_dense()
+        dense_mat = torch.sparse.FloatTensor(
+            mask._indices(), x - x.min() + 1, mask.size(), device=device).to_dense()
 
     return torch.argmax(dense_mat, 0)
+
 
 def sparse_max(x, mask, device):
     "Implements the exact, memory-inefficient max operation for a row vector input."
 
     if device.type == 'cuda':
-        dense_mat = torch.cuda.sparse.FloatTensor(mask._indices(), x - x.min() + 1, mask.size(), device=device).to_dense()
+        dense_mat = torch.cuda.sparse.FloatTensor(
+            mask._indices(), x - x.min() + 1, mask.size(), device=device).to_dense()
     else:
-        dense_mat = torch.sparse.FloatTensor(mask._indices(), x - x.min() + 1, mask.size(), device=device).to_dense()
+        dense_mat = torch.sparse.FloatTensor(
+            mask._indices(), x - x.min() + 1, mask.size(), device=device).to_dense()
 
     return torch.max(dense_mat, 0)[0] + x.min() - 1
 
+
 def safe_exp(x, device):
     "Implements safe exp operation."
-
     return torch.min(x, torch.tensor([30.0], device=device)).exp()
+
 
 def sparse_smooth_max(x, mask, device, alpha=30):
     "Implements the approximate, memory-efficient max operation for a row vector input."
 
     coeff = safe_exp(alpha * x, device)
-    return torch.mm(mask, x * coeff) / torch.max(torch.mm(mask, coeff), torch.ones(1, device=device))
+    return torch.mm(mask, x * coeff) / torch.max(
+        torch.mm(mask, coeff), torch.ones(1, device=device))
