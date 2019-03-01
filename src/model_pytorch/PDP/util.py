@@ -252,7 +252,7 @@ class PerceptronTanh(nn.Module):
     "Implements a 1-layer perceptron with Tanh activaton."
 
     def __init__(self, input_dimension, hidden_dimension, output_dimension):
-        super(Perceptron, self).__init__()
+        super(PerceptronTanh, self).__init__()
         self._layer1 = nn.Linear(input_dimension, hidden_dimension)
         self._layer2 = nn.Linear(hidden_dimension, output_dimension, bias=False)
 
