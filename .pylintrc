@@ -1,0 +1,9 @@
+[MESSAGES CONTROL]
+disable=not-callable
+
+[FORMAT]
+max-line-length=100
+max-module-lines=1000
+
+[TYPECHECK]
+generated-members=numpy,np,torch
