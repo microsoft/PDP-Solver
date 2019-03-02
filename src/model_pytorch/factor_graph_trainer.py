@@ -1,7 +1,8 @@
-# Copyright (c) Microsoft. All rights reserved.
-# Licensed under the MIT license. See LICENSE.md file in the project root for full license information.
+"""Defines the trainer base class for the PDP framework."""
 
-# factor_graph_trainer.py : Defines the trainer base class for the PDP framework.
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE.md file
+# in the project root for full license information.
 
 import os
 import time
@@ -59,14 +60,15 @@ class FactorGraphTrainerBase:
 
     # pylint: disable=unused-argument
     def _compute_loss(self, model, loss, prediction, label, graph_map, batch_variable_map,
-        batch_function_map, edge_feature, meta_data):
+                      batch_function_map, edge_feature, meta_data):
         "Computes the loss function."
 
         return loss(prediction, label)
 
     # pylint: disable=unused-argument
     def _compute_evaluation_metrics(self, model, evaluator, prediction, label, graph_map,
-        batch_variable_map, batch_function_map, edge_feature, meta_data):
+                                    batch_variable_map, batch_function_map, edge_feature,
+                                    meta_data):
         "Computes the evaluation function."
 
         return evaluator(prediction, label)
@@ -133,7 +135,8 @@ class FactorGraphTrainerBase:
                     print("Training epoch with batch of size {:4d} ({:4d}/{:4d}): {:3d}% complete...".format(
                         batch_variable_map.max().item(),
                         total_example_num % self._config['batch_size'],
-                        self._config['batch_size'], int(j * 100.0 / train_batch_num)), end='\r')
+                        self._config['batch_size'],
+                        int(j * 100.0 / train_batch_num)), end='\r')
 
                 del graph_map
                 del batch_variable_map
@@ -208,7 +211,6 @@ class FactorGraphTrainerBase:
 
                     (graph_map, batch_variable_map, batch_function_map,
                      edge_feature, graph_feat, label, _) = [self._to_cuda(d[i]) for d in data]
-
                     total_example_num += (batch_variable_map.max() + 1).detach().cpu().numpy()
 
                     self._test_batch(error, graph_map, batch_variable_map, batch_function_map,
@@ -237,13 +239,13 @@ class FactorGraphTrainerBase:
                     edge_feature, graph_feat, label, batch_replication):
 
         this_batch_size = batch_variable_map.max() + 1
-        edge_num = graph_map.size(1)
+        # edge_num = graph_map.size(1)
 
         for (i, model) in enumerate(self._model_list):
 
             state = _module(model).get_init_state(
-                graph_map, batch_variable_map, batch_function_map, edge_feature, graph_feat,
-                randomized=True, batch_replication=batch_replication)
+                graph_map, batch_variable_map, batch_function_map, edge_feature,
+                graph_feat, randomized=True, batch_replication=batch_replication)
 
             prediction, _ = model(
                 init_state=state, graph_map=graph_map, batch_variable_map=batch_variable_map,
@@ -339,8 +341,8 @@ class FactorGraphTrainerBase:
             input_file=train_list[0], limit=self._config['train_batch_limit'],
             hidden_dim=self._config['hidden_dim'], batch_size=self._config['batch_size'],
             shuffle=True, num_workers=self._num_cores,
-            max_cache_size=self._config['max_cache_size'], generator=generator,
-            epoch_size=train_epoch_size)
+            max_cache_size=self._config['max_cache_size'],
+            generator=generator, epoch_size=train_epoch_size)
 
         validation_loader = input_pipeline.FactorGraphDataset.get_loader(
             input_file=validation_list[0], limit=self._config['test_batch_limit'],
@@ -411,7 +413,6 @@ class FactorGraphTrainerBase:
 
                     self._logger.info(
                         'Rep {:2d}, Epoch {:2d}: {:s}'.format(rep + 1, epoch + 1, message))
-
                     self._logger.info('Time spent: %s seconds' % duration)
 
         if self._use_cuda:

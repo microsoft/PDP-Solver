@@ -1,25 +1,26 @@
-# Copyright (c) Microsoft. All rights reserved.
-# Licensed under the MIT license. See LICENSE.md file in the project root for full license information.
+"""Defines various decimators for the PDP framework."""
 
-# pdp_decimate.py : Defines various decimators for the PDP framework.
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE.md file
+# in the project root for full license information.
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from model_pytorch.PDP import util
 
 
 ###############################################################
-### The Decimator Classes
+# The Decimator Classes
 ###############################################################
 
 
 class NeuralDecimator(nn.Module):
     "Implements a neural decimator."
 
-    def __init__(self, device, message_dimension, meta_data_dimension, hidden_dimension, mem_hidden_dimension,
-                 mem_agg_hidden_dimension, agg_hidden_dimension, edge_dimension, dropout):
+    def __init__(self, device, message_dimension, meta_data_dimension, hidden_dimension,
+                 mem_hidden_dimension, mem_agg_hidden_dimension, agg_hidden_dimension,
+                 edge_dimension, dropout):
 
         super(NeuralDecimator, self).__init__()
         self._device = device
@@ -198,7 +199,7 @@ class ReinforceDecimator(nn.Module):
 
     def forward(self, init_state, message_state, sat_problem, is_training, active_mask=None):
         variable_state, function_state = message_state
-        
+
         if active_mask is not None and self._previous_function_state is not None and sat_problem._active_variables.sum() > 0:
             function_diff = (self._previous_function_state - message_state[1][:, 0]).abs().unsqueeze(1)
 
