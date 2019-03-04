@@ -27,7 +27,7 @@ verbose: true
 randomized: true
 train_inner_recurrence_num: 1
 train_outer_recurrence_num: 10
-test_recurrence_num: 1000
+test_recurrence_num: 200
 max_cache_size: 100000
 dropout: 0.2
 clip_norm: 0.65
@@ -42,6 +42,6 @@ min_alpha: 2
 max_alpha: 10
 min_k: 2
 max_k: 10
-local_search_iteration: 100
+local_search_iteration: 0
 epsilon: 0.5
 lambda: 1

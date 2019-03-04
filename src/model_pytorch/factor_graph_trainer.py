@@ -423,7 +423,7 @@ class FactorGraphTrainerBase:
             test_loader = input_pipeline.FactorGraphDataset.get_loader(
                 input_file=file, limit=self._config['test_batch_limit'],
                 hidden_dim=self._config['hidden_dim'], batch_size=self._config['batch_size'], shuffle=False,
-                num_workers=self._num_cores, max_cache_size=self._config['max_cache_size'])
+                num_workers=self._num_cores, max_cache_size=self._config['max_cache_size'], batch_replication=batch_replication)
 
             if import_path_base is not None:
                 self._load(import_path_base)
@@ -455,7 +455,7 @@ class FactorGraphTrainerBase:
         test_loader = input_pipeline.FactorGraphDataset.get_loader(
             input_file=test_list, limit=self._config['test_batch_limit'],
             hidden_dim=self._config['hidden_dim'], batch_size=self._config['batch_size'], shuffle=False,
-            num_workers=self._num_cores, max_cache_size=self._config['max_cache_size'])
+            num_workers=self._num_cores, max_cache_size=self._config['max_cache_size'], batch_replication=batch_replication)
 
         if import_path_base is not None:
             self._load(import_path_base)

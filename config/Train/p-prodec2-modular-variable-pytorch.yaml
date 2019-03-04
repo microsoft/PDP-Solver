@@ -46,6 +46,6 @@ min_q: 0.8
 max_q: 0.9
 min_c: 10
 max_c: 20
-local_search_iteration: 100
+local_search_iteration: 0
 epsilon: 0.5
 lambda: 1

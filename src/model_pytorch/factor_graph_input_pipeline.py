@@ -80,7 +80,7 @@ class DynamicBatchDivider(object):
 class FactorGraphDataset(data.Dataset):
     "Implements a PyTorch Dataset class for reading and parsing CNFs in the JSON format from disk."
 
-    def __init__(self, input_file, limit, hidden_dim, max_cache_size=100000, generator=None, epoch_size=0):
+    def __init__(self, input_file, limit, hidden_dim, max_cache_size=100000, generator=None, epoch_size=0, batch_replication=1):
 
         self._cache = collections.OrderedDict()
         self._generator = generator
@@ -92,7 +92,7 @@ class FactorGraphDataset(data.Dataset):
             with open(self._input_file, 'r') as fh_input:
                 self._row_num = len(fh_input.readlines())
 
-        self.batch_divider = DynamicBatchDivider(limit, hidden_dim)
+        self.batch_divider = DynamicBatchDivider(limit // batch_replication, hidden_dim)
 
     def __len__(self):
         if self._generator is not None:
@@ -188,7 +188,7 @@ class FactorGraphDataset(data.Dataset):
 
     @staticmethod
     def get_loader(input_file, limit, hidden_dim, batch_size, shuffle, num_workers,
-                    max_cache_size=100000, use_cuda=True, generator=None, epoch_size=0):
+                    max_cache_size=100000, use_cuda=True, generator=None, epoch_size=0, batch_replication=1):
         "Return the torch dataset loader object for the input."
 
         dataset = FactorGraphDataset(
@@ -197,7 +197,8 @@ class FactorGraphDataset(data.Dataset):
             hidden_dim=hidden_dim,
             max_cache_size=max_cache_size,
             generator=generator, 
-            epoch_size=epoch_size)
+            epoch_size=epoch_size, 
+            batch_replication=batch_replication)
 
         data_loader = torch.utils.data.DataLoader(
             dataset=dataset,
