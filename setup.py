@@ -15,14 +15,30 @@ def _read(fname):
 
 setup(
     name='PDP_Solver',
-    version='0.1',
     author="Saeed Amizadeh",
     author_email="saamizad@microsoft.com",
     description="PDP Solver implementation for the paper",
+    long_description=_read('./README.md'),
+    keywords="pdp sat solver pytorch paper icml",
     license="MIT",
-    keywords="example documentation tutorial",
     url="https://github/Microsoft/PDP-Solver",
+    version='0.1',
+    python_requires=">=3.5",
+    install_requires=[
+        "sympy >= 1.1",
+        "numpy >= 1.10",
+        "torch >= 0.4",
+    ],
     package_dir={"": "src"},
-    packages=["pdp"],
-    long_description=_read('./README.md')
+    packages=[
+        "pdp",
+        "pdp.factorgraph",
+        "pdp.nn"
+    ],
+    scripts=[
+        "src/satyr.py",
+        "src/satyr-train-test.py",
+        "src/dimacs2json.py",
+        "src/pdp/generator.py"
+    ]
 )
