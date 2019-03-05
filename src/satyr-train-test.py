@@ -7,9 +7,11 @@ import numpy as np
 import torch
 import torch.optim as optim
 import logging
-
 import argparse, os, yaml, csv
-from scripts_pytorch import PDP_solver_trainer, generators
+
+from pdp.generator import *
+from pdp.trainer import SatFactorGraphTrainer
+
 
 ##########################################################################################################################
 
@@ -71,7 +73,7 @@ def run(random_seed, config_file, is_training, load_model, cpu, reset_step, use_
     if not os.path.exists(last_model_path_base):
         os.makedirs(last_model_path_base)
 
-    trainer = PDP_solver_trainer.SatFactorGraphTrainer(config=config, use_cuda=not cpu, logger=logger)
+    trainer = SatFactorGraphTrainer(config=config, use_cuda=not cpu, logger=logger)
 
     # Training
     if is_training:
@@ -82,13 +84,13 @@ def run(random_seed, config_file, is_training, load_model, cpu, reset_step, use_
 
         if use_generator:
             if config['generator'] == 'modular':
-                generator = generators.ModularCNFGenerator(config['min_k'], config['min_n'], config['max_n'], config['min_q'],
+                generator = ModularCNFGenerator(config['min_k'], config['min_n'], config['max_n'], config['min_q'],
                     config['max_q'], config['min_c'], config['max_c'], config['min_alpha'], config['max_alpha'])
             elif config['generator'] == 'v-modular':
-                generator = generators.VariableModularCNFGenerator(config['min_k'], config['max_k'], config['min_n'], config['max_n'], config['min_q'],
+                generator = VariableModularCNFGenerator(config['min_k'], config['max_k'], config['min_n'], config['max_n'], config['min_q'],
                     config['max_q'], config['min_c'], config['max_c'], config['min_alpha'], config['max_alpha'])
             else:
-                generator = generators.UniformCNFGenerator(config['min_n'], config['max_n'], config['min_k'], config['max_k'], config['min_alpha'], config['max_alpha'])
+                generator = UniformCNFGenerator(config['min_n'], config['max_n'], config['min_k'], config['max_k'], config['min_alpha'], config['max_alpha'])
 
         model_list, errors, losses = trainer.train(
         	train_list=config['train_path'], validation_list=config['validation_path'], 

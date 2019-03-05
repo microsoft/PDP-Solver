@@ -8,8 +8,10 @@ import yaml, os, logging, sys
 import numpy as np
 import torch
 from datetime import datetime
-from scripts_pytorch import PDP_solver_trainer
+
 import dimacs2json
+
+from pdp.trainer import SatFactorGraphTrainer
 
 
 def run(config, logger, output):
@@ -21,7 +23,7 @@ def run(config, logger, output):
     if config['verbose']:
         logger.info("Building the computational graph...")
 
-    predicter = PDP_solver_trainer.SatFactorGraphTrainer(config=config, use_cuda=not config['cpu_mode'], logger=logger)
+    predicter = SatFactorGraphTrainer(config=config, use_cuda=not config['cpu_mode'], logger=logger)
 
     if config['verbose']:
         logger.info("Starting the prediction phase...")

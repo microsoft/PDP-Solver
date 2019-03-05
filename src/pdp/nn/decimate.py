@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from model_pytorch.PDP import util
+from pdp.nn import util
 
 
 ###############################################################

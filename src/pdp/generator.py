@@ -7,6 +7,7 @@ import numpy as np
 import argparse
 import os, sys
 
+
 def is_sat(_var_num, iclause_list):
     ## Note: Invoke your SAT solver of choice here for generating labeled data.
     return False
