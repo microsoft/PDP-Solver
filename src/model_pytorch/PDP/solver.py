@@ -361,7 +361,7 @@ class PropagatorDecimatorSolverBase(nn.Module):
 
         # Post-processing local search
         if not is_training:
-            prediction = self._local_search(prediction, sat_problem)
+            prediction = self._local_search(prediction, sat_problem, batch_replication)
 
         prediction = self._update_solution(prediction, sat_problem)
         
@@ -448,7 +448,7 @@ class PropagatorDecimatorSolverBase(nn.Module):
 
         return (variable_prediction, function_prediction), new_propagator_state, new_decimator_state
 
-    def _local_search(self, prediction, sat_problem):
+    def _local_search(self, prediction, sat_problem, batch_replication):
         "Implements the Walk-SAT algorithm for post-processing."
 
         assignment = (prediction[0] > 0.5).float()
@@ -461,7 +461,11 @@ class PropagatorDecimatorSolverBase(nn.Module):
             unsat_examples, unsat_functions = self._compute_energy(assignment, sat_problem)
             unsat_examples = (unsat_examples > 0).float()
 
-            if unsat_examples.sum() == 0:
+            if batch_replication > 0:
+                compact_unsat_examples = 1 - (torch.mm(sat_problem._replication_mask_tuple[1], 1 - unsat_examples) > 0).float()
+                if compact_unsat_examples.sum() == 0:
+                    break
+            elif unsat_examples.sum() == 0:
                 break
 
             delta_energy = self._compute_energy_diff(assignment, sat_problem)

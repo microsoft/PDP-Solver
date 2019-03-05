@@ -42,6 +42,6 @@ min_alpha: 2
 max_alpha: 10
 min_k: 2
 max_k: 10
-local_search_iteration: 0
+local_search_iteration: 100
 epsilon: 0.5
 lambda: 1
