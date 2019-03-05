@@ -1,7 +1,12 @@
-# Copyright (c) Microsoft. All rights reserved.
-# Licensed under the MIT license. See LICENSE.md file in the project root for full license information.
+#!/usr/bin/env python3
+"""
+An auxiliary script for converting sets of DIMACS files into the PDP's compact JSON format.
+"""
 
-# dimacs2json.py : An auxiliary script for converting sets of DIMACS files into the PDP's compact JSON format.
+# Copyright (c) Microsoft. All rights reserved.
+#
+# Licensed under the MIT license. See LICENSE.md file
+# in the project root for full license information.
 
 import numpy as np
 import hashlib as hl

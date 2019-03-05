@@ -1,7 +1,11 @@
-# Copyright (c) Microsoft. All rights reserved.
-# Licensed under the MIT license. See LICENSE.md file in the project root for full license information.
+#!/usr/bin/env python3
+"""
+Main script to run a trained PDP solver against a test dataset.
+"""
 
-# satyr.py : The main script to run a trained PDP solver against a test dataset.
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE.md file
+# in the project root for full license information.
 
 import argparse
 import yaml, os, logging, sys
