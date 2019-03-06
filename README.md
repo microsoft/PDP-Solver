@@ -13,9 +13,9 @@ The PDP framework is a generic framework based on the idea of Propagation, Decim
 }
 ```
 
-We also note the present work is still far away from competing with modern industrial solvers; nevertheless, we believe it is a significant step in the right direction for machine learning-based methods. Hence, we are glad to open source our code to the researchers in related fields including the neuro-symbolic community as well as the classical SAT community.     
+We also note the present work is still far away from competing with modern industrial solvers; nevertheless, we believe it is a significant step in the right direction for machine learning-based methods. Hence, we are glad to open source our code to the researchers in related fields including the neuro-symbolic community as well as the classical SAT community.
 
-# SATYR 
+# SATYR
 
 SATYR is the adaptation of the PDP framework for training and deploying neural Boolean Satisfiability solvers. In particular, SATYR implements:
 
@@ -23,7 +23,7 @@ SATYR is the adaptation of the PDP framework for training and deploying neural B
 
 2. Non-learnable classical solvers based on message passing in graphical models (e.g. Survey Propagation). Even though, these solvers are non-learnable, they still benefit from the embarrassingly parallel implementation via the PDP framework on GPUs.
 
-It should be noted that all the SATYR solvers try to find a satisfying assignment for input SAT formulas. However, if the SATYR solvers cannot find a satisfying solution for a given problem within their iteration number budget, it does NOT necessarily mean that the input problem in UNSAT. In other words, none of the SATYR solvers provide the proof of unsatisfiability. 
+It should be noted that all the SATYR solvers try to find a satisfying assignment for input SAT formulas. However, if the SATYR solvers cannot find a satisfying solution for a given problem within their iteration number budget, it does NOT necessarily mean that the input problem in UNSAT. In other words, none of the SATYR solvers provide the proof of unsatisfiability.
 
 # Setup
 
@@ -86,17 +86,17 @@ The commandline arguments are:
 
         * *'np-nd-np'*: A fully neural PDP solver.
 
-        * *'p-d-p'*: A PDP solver that implements the classical Survey Propagation with greedy sequential decimation.[^1]
+        * *'p-d-p'*: A PDP solver that implements the classical Survey Propagation with greedy sequential decimation.[^1](#reference-1)
 
         * *'p-nd-np'*: A PDP solver that implements the classical Survey Propagation except with neural decimation.
 
         * *'np-d-np'*: A PDP solver that implements neural propagation with a greedy sequential decimation.
 
-        * *'reinforce'*: A PDP solver that implements the classical Survey Propagation with concurrent distributed decimation (The REINFORCE algorithm).[^2] 
+        * *'reinforce'*: A PDP solver that implements the classical Survey Propagation with concurrent distributed decimation (The REINFORCE algorithm).[^2](#reference-2)
 
-        * *'walk-sat'*: A PDP solver that implements the classical local search Walk-SAT algorithm.[^3]
+        * *'walk-sat'*: A PDP solver that implements the classical local search Walk-SAT algorithm.[^3](#reference-3)
 
-    * **has_meta_data**: whether the input problem instances contain meta features other than the CNF itself (Note: loading of such features is not supported by the current input pipeline). 
+    * **has_meta_data**: whether the input problem instances contain meta features other than the CNF itself (Note: loading of such features is not supported by the current input pipeline).
 
     * **model_name**: The name picked for the model by the user.
 
@@ -116,7 +116,7 @@ The commandline arguments are:
 
     If **model_type** is *'np-nd-np'* or *'np-d-np'*:
 
-    * **mem_hidden_dim**: The dimensionality of the hidden layer for the perceptron that is applied to messages *before* the aggregation step in the propagator.   
+    * **mem_hidden_dim**: The dimensionality of the hidden layer for the perceptron that is applied to messages *before* the aggregation step in the propagator.
 
     * **agg_hidden_dim**: The dimensionality of the hidden layer for the perceptron that is applied to messages *after* the aggregation step in the propagator.
 
@@ -127,15 +127,15 @@ The commandline arguments are:
     * **classifier_dim**: The dimensionality of the hidden layer for the perceptron that is used as the final predictor.
 
     If **model_type** is *'p-d-p'* or *'np-d-np'*:
-    
-    * **tolerance**: The convergence tolerance for the propagator before sequential decimator is invoked. 
-    
+
+    * **tolerance**: The convergence tolerance for the propagator before sequential decimator is invoked.
+
     * **t_max**: The maximum iteration number for the propagator before sequential decimator is invoked.
 
     If **model_type** is *'reinforce'*:
-    
+
     * **pi**: The external force magnitude parameter for the REINFORCE algorithm.
-    
+
     * **decimation_probability**: The probability with which the distributed decimation is invoked in the REINFORCE algorithm.
 
 + **test_path**: The path to the input JSON file containing the test CNFs (in the case of '-d' option, the path to the directory containing the test DIMACS files.)
@@ -161,9 +161,9 @@ The commandline arguments are:
 
 + **-l LOAD_MODEL** or **-load LOAD_MODEL**: LOAD_MODEL is:
 
-    * *best*: The model is initialized by the best model (according to the validation metric) saved from the previous run. 
+    * *best*: The model is initialized by the best model (according to the validation metric) saved from the previous run.
 
-    * *last*: The model is initialized by the last model saved from the previous run. 
+    * *last*: The model is initialized by the last model saved from the previous run.
 
     * Otherwise, the model is initialized by random weights.
 
@@ -171,7 +171,7 @@ The commandline arguments are:
 
 + **-r** or **--reset**: Resets the global time parameter to 0 (used for annealing the temperature).
 
-+ **-g** or **--use_generator**: Makes the training process use one of the provided CNF generators to generate unlabeled training CNF instances on the fly.  
++ **-g** or **--use_generator**: Makes the training process use one of the provided CNF generators to generate unlabeled training CNF instances on the fly.
 
 + **-b BATCH_REPLICATION** or **--batch_replication BATCH_REPLICATION**: BATCH_REPLICATION is the replication factor for input problems to further benefit from parallelization (default: 1).
 
@@ -202,29 +202,29 @@ The commandline arguments are:
     * **label_dim**: Always set to 1 for SATYR.
 
     * **edge_feature_dim**: Always set to 1 for SATYR.
-    
+
     * **meta_feature_dim**: The dimensionality of the meta features (0 for now).
-    
+
     * **error_dim**: The number error metrics the model reports on the validation/test sets (3 for now: accuracy, recall and test loss).
-    
+
     * **metric_index**: The 0-based index of the error metric used to pick the best model.
-    
+
     * **prediction_dim**: Always set to 1 for SATYR.
 
     * **batch_size**: The batch size used for training/testing.
 
     * **learning_rate**: The learning rate for ADAM optimization algorithm used for training.
-    
+
     * **exploration**: The exploration factor used for annealing the temperature.
 
     * **verbose**: If TRUE prints log messages to STDOUT.
 
     * **randomized**: If TRUE initializes the propagator and the decimator messages with random values; otherwise with zeros.
-    
+
     * **train_inner_recurrence_num**: The number of inner loop iterations before the loss function is computed (typically is set to 1).
-    
+
     * **train_outer_recurrence_num**: The number of outer loop iterations (T in the paper) used during training.
-    
+
     * **test_recurrence_num**: The number of outer loop iterations (T in the paper) used during testing.
 
     * **max_cache_size**: The maximum size of the cache containing the parsed CNFs loaded from disk during training.
@@ -234,7 +234,7 @@ The commandline arguments are:
     * **clip_norm**: The clip norm ratio used for gradient clipping during training.
 
     * **weight_decay**: The weight decay coefficient for ADAM optimizer used for training.
-    
+
     * **loss_sharpness**: The sharpness of the step function used for calculating loss (the kappa parameter in the paper).
 
     + **train_batch_limit**: The memory limit used for dynamic batching during training. It must be empirically tuned by the user depending on the available GPU memory.
@@ -245,7 +245,7 @@ The commandline arguments are:
 
         * *'uniform'*: The uniform random k-SAT generator.
 
-        * *'modular'*: The modular random k-SAT generator with fixed k (specified by **min_k**) according to the Community Attachment model[^4].
+        * *'modular'*: The modular random k-SAT generator with fixed k (specified by **min_k**) according to the Community Attachment model[^4](#reference-4).
 
         * *'v-modular'*: The modular random k-SAT generator with variable size k according to the Community Attachment model.
 
@@ -256,9 +256,9 @@ The commandline arguments are:
     * **min_alpha**: The minimum clause/variable ratio for a random training CNF instance in the case -g option is deployed.
 
     * **max_alpha**: The maximum clause/variable ratio for a random training CNF instance in the case -g option is deployed.
-    
+
     * **min_k**: The minimum clause size for a random training CNF instance in the case -g option is deployed.
-    
+
     * **max_k**: The maximum clause size for a random training CNF instance in the case -g option is deployed (not supported for *'v-modular'* generator).
 
     * **min_q**: The minimum modularity value for a random training CNF instance generated according to the Community Attachment model in the case -g option is deployed (not supported for *'uniform'* generator).
@@ -278,10 +278,10 @@ The commandline arguments are:
     If **model_type** is *'np-nd-np'*, *'p-nd-np'* or *'np-d-np'*:
 
     * **hidden_dim**: The dimensionality of messages between the propagator and the decimator.
-    
+
     If **model_type** is *'np-nd-np'* or *'np-d-np'*:
 
-    * **mem_hidden_dim**: The dimensionality of the hidden layer for the perceptron that is applied to messages *before* the aggregation step in the propagator.   
+    * **mem_hidden_dim**: The dimensionality of the hidden layer for the perceptron that is applied to messages *before* the aggregation step in the propagator.
 
     * **agg_hidden_dim**: The dimensionality of the hidden layer for the perceptron that is applied to messages *after* the aggregation step in the propagator.
 
@@ -292,22 +292,22 @@ The commandline arguments are:
     * **classifier_dim**: The dimensionality of the hidden layer for the perceptron that is used as the final predictor.
 
     If **model_type** is *'p-d-p'* or *'np-d-np'*:
-    
-    * **tolerance**: The convergence tolerance for the propagator before sequential decimator is invoked. 
-    
+
+    * **tolerance**: The convergence tolerance for the propagator before sequential decimator is invoked.
+
     * **t_max**: The maximum iteration number for the propagator before sequential decimator is invoked.
 
     If **model_type** is *'reinforce'*:
-    
+
     * **pi**: The external force magnitude parameter for the REINFORCE algorithm.
-    
+
     * **decimation_probability**: The probability with which the distributed decimation is invoked in the REINFORCE algorithm.
 
 # Input/Output Formats
 
 ## Input
 
-SATYR effectively works with the standard DIMACS format for representing CNF formulas. However, in order to increase the ingressing efficiency, the actual solvers work directly with an intermediate JSON format instead of the DIMACS representation for consuming input CNF data. A key feature of the intermediate JSON format is that an entire set of DIMACS files can be represented by a single JSON file where each row in the JSON file associates with one DIMACS file. 
+SATYR effectively works with the standard DIMACS format for representing CNF formulas. However, in order to increase the ingressing efficiency, the actual solvers work directly with an intermediate JSON format instead of the DIMACS representation for consuming input CNF data. A key feature of the intermediate JSON format is that an entire set of DIMACS files can be represented by a single JSON file where each row in the JSON file associates with one DIMACS file.
 
 The train/test script assumes the train/validation/test sets are already in the JSON format. In order to convert a set of DIMACS files into a single JSON file, we have provided the following script:
 
@@ -327,13 +327,13 @@ where the commandline arguments are:
 
 + **out_file**: The path of the output JSON file.
 
-The solver script, however, does not require the input problems to be in the JSON format; they can be in the DIMACS format as long as the -d option is deployed. Nevertheless, for repetitive applications of the solver script on the same input set, we would recommend externally converting the input DIMACS files into the JSON format once and only consume the JSON file afterwards. 
+The solver script, however, does not require the input problems to be in the JSON format; they can be in the DIMACS format as long as the -d option is deployed. Nevertheless, for repetitive applications of the solver script on the same input set, we would recommend externally converting the input DIMACS files into the JSON format once and only consume the JSON file afterwards.
 
 ## Output
 
 The output of the solver script is a JSON file where each line corresponds to one input CNF instance and is a dictionary with the following key:value pairs:
 
-+ **"ID"**: The DIMACS file name associated with a CNF example. 
++ **"ID"**: The DIMACS file name associated with a CNF example.
 
 + **"label"**: The binary SAT/UNSAT (0/1) label associated with a CNF example (only if it is already provided in the DIMACS filename).
 
@@ -368,10 +368,10 @@ The PDP framework supports a wide range of solvers from fully neural solvers to 
 
 # References
 
-[^1]: Mezard, M. and Montanari, A. Information, physics, and computation. Oxford University Press, 2009.
+<a id="reference-1">1.</a>Mezard, M. and Montanari, A. Information, physics, and computation. Oxford University Press, 2009.
 
-[^2]: Chavas, J., Furtlehner, C., Mezard, M., and Zecchina, R. Survey-propagation decimation through distributed local computations. Journal of Statistical Mechanics: Theory and Experiment, 2005(11):P11016, 2005.
+<a id="reference-2">2.</a> Chavas, J., Furtlehner, C., Mezard, M., and Zecchina, R. Survey-propagation decimation through distributed local computations. Journal of Statistical Mechanics: Theory and Experiment, 2005(11):P11016, 2005.
 
-[^3]: Hoos, Holger H. On the Run-time Behaviour of Stochastic Local Search Algorithms for SAT. In AAAI/IAAI, pp. 661-666. 1999.
+<a id="reference-3">3.</a> Hoos, Holger H. On the Run-time Behaviour of Stochastic Local Search Algorithms for SAT. In AAAI/IAAI, pp. 661-666. 1999.
 
-[^4]: Giraldez-Cru, J. and Levy, J. Generating sat instances with community structure. Artificial Intelligence, 238:119–134, 2016.
+<a id="reference-4">4.</a> Giraldez-Cru, J. and Levy, J. Generating sat instances with community structure. Artificial Intelligence, 238:119–134, 2016.
