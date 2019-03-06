@@ -19,8 +19,18 @@ setup(
     author_email="saamizad@microsoft.com",
     description="PDP Framework for Neural Constraint Satisfaction Solving",
     long_description=_read('./README.md'),
+    long_description_content_type='text/markdown',
     keywords="pdp sat solver pytorch neurosymbolic",
     license="MIT",
+    classifiers=[
+        # Trove classifiers
+        # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
+        'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: Implementation :: CPython',
+    ],
     url="https://github/Microsoft/PDP-Solver",
     version='0.1',
     python_requires=">=3.5",
