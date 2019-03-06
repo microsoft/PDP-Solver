@@ -368,10 +368,7 @@ The PDP framework supports a wide range of solvers from fully neural solvers to 
 
 # References
 
-<a id="reference-1">1.</a>Mezard, M. and Montanari, A. Information, physics, and computation. Oxford University Press, 2009.
-
-<a id="reference-2">2.</a> Chavas, J., Furtlehner, C., Mezard, M., and Zecchina, R. Survey-propagation decimation through distributed local computations. Journal of Statistical Mechanics: Theory and Experiment, 2005(11):P11016, 2005.
-
-<a id="reference-3">3.</a> Hoos, Holger H. On the Run-time Behaviour of Stochastic Local Search Algorithms for SAT. In AAAI/IAAI, pp. 661-666. 1999.
-
-<a id="reference-4">4.</a> Giraldez-Cru, J. and Levy, J. Generating sat instances with community structure. Artificial Intelligence, 238:119–134, 2016.
+1. <a id="reference-1"></a>Mezard, M. and Montanari, A. Information, physics, and computation. Oxford University Press, 2009.
+2. <a id="reference-2"></a>Chavas, J., Furtlehner, C., Mezard, M., and Zecchina, R. Survey-propagation decimation through distributed local computations. Journal of Statistical Mechanics: Theory and Experiment, 2005(11):P11016, 2005.
+3. <a id="reference-3"></a>Hoos, Holger H. On the Run-time Behaviour of Stochastic Local Search Algorithms for SAT. In AAAI/IAAI, pp. 661-666. 1999.
+4. <a id="reference-4"></a>Giraldez-Cru, J. and Levy, J. Generating sat instances with community structure. Artificial Intelligence, 238:119–134, 2016.
