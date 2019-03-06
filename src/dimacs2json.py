@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-An auxiliary script for converting sets of DIMACS files into the PDP's compact JSON format.
+Auxiliary script for converting sets of DIMACS files into PDP's compact JSON format.
 """
 
 # Copyright (c) Microsoft. All rights reserved.
@@ -8,16 +8,13 @@ An auxiliary script for converting sets of DIMACS files into the PDP's compact J
 # Licensed under the MIT license. See LICENSE.md file
 # in the project root for full license information.
 
-import numpy as np
-import hashlib as hl
+import sys
+import argparse
+
 from os import listdir
 from os.path import isfile, join, split, splitext
 
-from heapq import heappush, heappop
-
-from sympy import bool_map
-from sympy.logic import simplify_logic
-import sys, argparse
+import numpy as np
 
 
 class CompactDimacs:
@@ -90,7 +87,8 @@ class CompactDimacs:
         clause_num, var_num = self._clause_mat.shape
 
         ind = np.nonzero(self._clause_mat)
-        return [[var_num, clause_num], list((ind[1] + 1) * self._clause_mat[ind]), list(ind[0] + 1), self._output, [self.file_name]]
+        return [[var_num, clause_num], list((ind[1] + 1) * self._clause_mat[ind]),
+                 list(ind[0] + 1), self._output, [self.file_name]]
 
 
 def convert_directory(dimacs_dir, output_file, propagate, only_positive=False):
@@ -115,6 +113,7 @@ def convert_directory(dimacs_dir, output_file, propagate, only_positive=False):
             print("Generating JSON input file: %6.2f%% complete..." % (
                 (i + 1) * 100.0 / len(file_list)), end='\r', file=sys.stderr)
 
+
 def convert_file(file_name, output_file, propagate):
     with open(output_file, 'w') as f:
         if len(file_name) < 8:
@@ -125,6 +124,7 @@ def convert_file(file_name, output_file, propagate):
 
         bc = CompactDimacs(file_name, label, propagate)
         f.write(str(bc.to_json()).replace("'", '"') + '\n')
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

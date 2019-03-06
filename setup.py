@@ -25,7 +25,6 @@ setup(
     version='0.1',
     python_requires=">=3.5",
     install_requires=[
-        "sympy >= 1.1",
         "numpy >= 1.10",
         "torch >= 0.4",
     ],
