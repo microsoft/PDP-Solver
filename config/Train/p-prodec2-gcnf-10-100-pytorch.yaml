@@ -4,7 +4,7 @@ version: "2.0g"
 has_meta_data: false # true
 train_path: ["../../datasets/SAT/p-cnf-3-10-large.json"]
 validation_path: ["../../datasets/SAT/cnf-10.json"]
-test_path: ["../../datasets/SAT/M-4SAT-validation-2/M-4SAT-validation-2_0_7.0_10.0.json"] #["../../datasets/SAT/4SAT-subsample"] #["../../datasets/SAT/M0-4SAT-100"] # ["../../datasets/SAT/3SAT-100"] # ["../../datasets/SAT/4SAT-100"] # ["../../datasets/SAT/cnf-10.json"] #
+test_path: ["../../datasets/SAT/sat-race-2015.json"] #["../../datasets/SAT/M-4SAT-validation-2/M-4SAT-validation-2_0_7.0_10.0.json"] #["../../datasets/SAT/4SAT-subsample"] #["../../datasets/SAT/M0-4SAT-100"] # ["../../datasets/SAT/3SAT-100"] # ["../../datasets/SAT/4SAT-100"] # ["../../datasets/SAT/cnf-10.json"] #
 model_path: "../../Trained-models/SAT"
 repetition_num: 1
 train_epoch_size: 40000

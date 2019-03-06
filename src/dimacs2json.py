@@ -4,14 +4,8 @@
 # dimacs2json.py : An auxiliary script for converting sets of DIMACS files into the PDP's compact JSON format.
 
 import numpy as np
-import hashlib as hl
 from os import listdir
 from os.path import isfile, join, split, splitext
-
-from heapq import heappush, heappop
-
-from sympy import bool_map
-from sympy.logic import simplify_logic
 import sys, argparse
 
 

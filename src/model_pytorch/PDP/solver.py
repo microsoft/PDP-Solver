@@ -175,26 +175,6 @@ class SATProblem(object):
 
         return (variable_mask, variable_mask_transpose, function_mask, function_mask_transpose)
 
-    def _peel_old(self):
-        vf_map, vf_map_transpose, signed_vf_map, _ = self._vf_mask_tuple
-        variable_degree = torch.mm(vf_map, self._active_functions)
-
-        while True:
-            single_variables = (variable_degree == 1).float() * self._active_variables
-
-            if torch.sum(single_variables) <= 0:
-                break
-
-            single_functions = (torch.mm(vf_map_transpose, single_variables) > 0).float() * self._active_functions
-            variable_sign = torch.mm(signed_vf_map, single_functions) * self._active_variables
-            degree_delta = torch.mm(vf_map, single_functions) * self._active_variables
-
-            variable_degree -= degree_delta
-            self._solution[single_variables[:, 0] == 1] = (variable_sign[single_variables[:, 0] == 1, 0] + 1) / 2.0
-
-            self._active_variables[single_variables[:, 0] == 1, 0] = 0
-            self._active_functions[single_functions[:, 0] == 1, 0] = 0
-
     def _peel(self):
         "Implements the peeling algorithm."
         
@@ -461,7 +441,7 @@ class PropagatorDecimatorSolverBase(nn.Module):
             unsat_examples, unsat_functions = self._compute_energy(assignment, sat_problem)
             unsat_examples = (unsat_examples > 0).float()
 
-            if batch_replication > 0:
+            if batch_replication > 1:
                 compact_unsat_examples = 1 - (torch.mm(sat_problem._replication_mask_tuple[1], 1 - unsat_examples) > 0).float()
                 if compact_unsat_examples.sum() == 0:
                     break
