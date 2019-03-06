@@ -13,7 +13,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from model_pytorch import factor_graph_input_pipeline as input_pipeline
+from pdp.factorgraph.dataset import FactorGraphDataset
 
 
 def _module(model):
@@ -314,13 +314,13 @@ class FactorGraphTrainerBase:
         "Trains the PDP model."
 
         # Build the input pipeline
-        train_loader = input_pipeline.FactorGraphDataset.get_loader(
+        train_loader = FactorGraphDataset.get_loader(
             input_file=train_list[0], limit=self._config['train_batch_limit'],
             hidden_dim=self._config['hidden_dim'], batch_size=self._config['batch_size'], shuffle=True,
             num_workers=self._num_cores, max_cache_size=self._config['max_cache_size'], generator=generator, 
             epoch_size=train_epoch_size)
 
-        validation_loader = input_pipeline.FactorGraphDataset.get_loader(
+        validation_loader = FactorGraphDataset.get_loader(
             input_file=validation_list[0], limit=self._config['test_batch_limit'],
             hidden_dim=self._config['hidden_dim'], batch_size=self._config['batch_size'], shuffle=False,
             num_workers=self._num_cores, max_cache_size=self._config['max_cache_size'])
@@ -420,10 +420,10 @@ class FactorGraphTrainerBase:
 
         for file in test_files:
             # Build the input pipeline
-            test_loader = input_pipeline.FactorGraphDataset.get_loader(
+            test_loader = FactorGraphDataset.get_loader(
                 input_file=file, limit=self._config['test_batch_limit'],
                 hidden_dim=self._config['hidden_dim'], batch_size=self._config['batch_size'], shuffle=False,
-                num_workers=self._num_cores, max_cache_size=self._config['max_cache_size'])
+                num_workers=self._num_cores, max_cache_size=self._config['max_cache_size'], batch_replication=batch_replication)
 
             if import_path_base is not None:
                 self._load(import_path_base)
@@ -452,10 +452,10 @@ class FactorGraphTrainerBase:
         "Produces predictions for the trained PDP model."
 
         # Build the input pipeline
-        test_loader = input_pipeline.FactorGraphDataset.get_loader(
+        test_loader = FactorGraphDataset.get_loader(
             input_file=test_list, limit=self._config['test_batch_limit'],
             hidden_dim=self._config['hidden_dim'], batch_size=self._config['batch_size'], shuffle=False,
-            num_workers=self._num_cores, max_cache_size=self._config['max_cache_size'])
+            num_workers=self._num_cores, max_cache_size=self._config['max_cache_size'], batch_replication=batch_replication)
 
         if import_path_base is not None:
             self._load(import_path_base)

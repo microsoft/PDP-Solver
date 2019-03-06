@@ -1,15 +1,21 @@
-# Copyright (c) Microsoft. All rights reserved.
-# Licensed under the MIT license. See LICENSE.md file in the project root for full license information.
+#!/usr/bin/env python3
+"""
+Main script to run a trained PDP solver against a test dataset.
+"""
 
-# satyr.py : The main script to run a trained PDP solver against a test dataset.
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE.md file
+# in the project root for full license information.
 
 import argparse
 import yaml, os, logging, sys
 import numpy as np
 import torch
 from datetime import datetime
-from scripts_pytorch import PDP_solver_trainer
+
 import dimacs2json
+
+from pdp.trainer import SatFactorGraphTrainer
 
 
 def run(config, logger, output):
@@ -21,7 +27,7 @@ def run(config, logger, output):
     if config['verbose']:
         logger.info("Building the computational graph...")
 
-    predicter = PDP_solver_trainer.SatFactorGraphTrainer(config=config, use_cuda=not config['cpu_mode'], logger=logger)
+    predicter = SatFactorGraphTrainer(config=config, use_cuda=not config['cpu_mode'], logger=logger)
 
     if config['verbose']:
         logger.info("Starting the prediction phase...")

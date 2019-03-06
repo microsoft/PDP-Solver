@@ -1,8 +1,6 @@
 model_name: "p-prodec2-modular-variable-pytorch-2"
 model_type: "np-nd-np"
 version: "2.0g"
-continuous_train: false
-cache_data: false
 has_meta_data: false # true
 train_path: ["../../datasets/SAT/p-cnf-3-10-large.json"]
 validation_path: ["../../datasets/SAT/M-4SAT-validation-2/M-4SAT-validation-2_0_7.0_10.0.json"]
@@ -10,7 +8,6 @@ test_path: ["../../datasets/SAT/M-4SAT-validation-2/M-4SAT-validation-2_0_7.0_10
 model_path: "../../Trained-models/SAT"
 repetition_num: 1
 train_epoch_size: 40000
-test_epoch_size: 1000
 epoch_num: 500
 label_dim: 1
 edge_feature_dim: 1
@@ -24,21 +21,20 @@ agg_hidden_dim: 150  # 135
 mem_agg_hidden_dim: 100  # 50
 classifier_dim: 100  # 100
 batch_size: 5000
-batch_expansion: 1
 learning_rate: 0.0001
 exploration: 0.1
 verbose: true
 randomized: true
 train_inner_recurrence_num: 1
 train_outer_recurrence_num: 10
-test_recurrence_num: 20
+test_recurrence_num: 200
 max_cache_size: 100000
 dropout: 0.2
 clip_norm: 0.65
 weight_decay: 0.0000000001
 loss_sharpness: 5
 train_batch_limit: 4000000
-test_batch_limit: 30000000
+test_batch_limit: 40000000
 generator: "v-modular"
 min_n: 5
 max_n: 100

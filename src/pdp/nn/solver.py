@@ -9,7 +9,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from model_pytorch.PDP import pdp_propagate, pdp_decimate, pdp_predict, util
+from pdp.nn import pdp_propagate, pdp_decimate, pdp_predict, util
+
 
 ###############################################################
 ### The Problem Class
@@ -174,26 +175,6 @@ class SATProblem(object):
         function_mask_transpose = function_mask.transpose(0, 1)
 
         return (variable_mask, variable_mask_transpose, function_mask, function_mask_transpose)
-
-    def _peel_old(self):
-        vf_map, vf_map_transpose, signed_vf_map, _ = self._vf_mask_tuple
-        variable_degree = torch.mm(vf_map, self._active_functions)
-
-        while True:
-            single_variables = (variable_degree == 1).float() * self._active_variables
-
-            if torch.sum(single_variables) <= 0:
-                break
-
-            single_functions = (torch.mm(vf_map_transpose, single_variables) > 0).float() * self._active_functions
-            variable_sign = torch.mm(signed_vf_map, single_functions) * self._active_variables
-            degree_delta = torch.mm(vf_map, single_functions) * self._active_variables
-
-            variable_degree -= degree_delta
-            self._solution[single_variables[:, 0] == 1] = (variable_sign[single_variables[:, 0] == 1, 0] + 1) / 2.0
-
-            self._active_variables[single_variables[:, 0] == 1, 0] = 0
-            self._active_functions[single_functions[:, 0] == 1, 0] = 0
 
     def _peel(self):
         "Implements the peeling algorithm."
@@ -361,19 +342,12 @@ class PropagatorDecimatorSolverBase(nn.Module):
 
         # Post-processing local search
         if not is_training:
-            prediction = self._local_search(prediction, sat_problem)
+            prediction = self._local_search(prediction, sat_problem, batch_replication)
 
         prediction = self._update_solution(prediction, sat_problem)
         
         if batch_replication > 1:
-            edge_flag, variable_flag, function_flag = self._deduplicate(prediction, sat_problem)
-            variable_prediction = prediction[0][variable_flag, 0].unsqueeze(1)
-            function_prediction = prediction[1][function_flag, 0].unsqueeze(1) if prediction[1] is not None else None
-
-            prediction = (variable_prediction, function_prediction)
-            
-            propagator_state = [v[edge_flag, :] for v in propagator_state]
-            decimator_state = [v[edge_flag, :] for v in decimator_state]
+            prediction, propagator_state, decimator_state = self._deduplicate(prediction, propagator_state, decimator_state, sat_problem)
 
         return (prediction, (propagator_state, decimator_state))
 
@@ -423,31 +397,39 @@ class PropagatorDecimatorSolverBase(nn.Module):
 
         return variable_solution, prediction[1]
 
-    def _deduplicate(self, prediction, sat_problem):
+    def _deduplicate(self, prediction, propagator_state, decimator_state, sat_problem):
         "De-duplicates the current batch (to neutralize the batch replication) by finding the replica with minimum energy for each problem instance. "
 
         if sat_problem._batch_replication <= 1 or sat_problem._replication_mask_tuple is None:
             return None, None, None
 
         assignment = 2 * prediction[0] - 1.0
-        energy, _ = self._compute_energy(assignment, sat_problem) 
+        energy, _ = self._compute_energy(assignment, sat_problem)
         max_ind = util.sparse_argmax(-energy.squeeze(1), sat_problem._replication_mask_tuple[0], device=self._device)
 
         batch_flag = torch.zeros(sat_problem._batch_size, 1, device=self._device)
         batch_flag[max_ind, 0] = 1
 
-        variable_flag = torch.mm(sat_problem._batch_mask_tuple[0], batch_flag)
+        flag = torch.mm(sat_problem._batch_mask_tuple[0], batch_flag)
+        variable_prediction = (flag * prediction[0]).view(sat_problem._batch_replication, -1).sum(dim=0).unsqueeze(1)
+
+        flag = torch.mm(sat_problem._graph_mask_tuple[1], flag)
+        new_propagator_state = ()
+        for x in propagator_state:
+            new_propagator_state += ((flag * x).view(sat_problem._batch_replication, sat_problem._edge_num / sat_problem._batch_replication, -1).sum(dim=0),)
+
+        new_decimator_state = ()
+        for x in decimator_state:
+            new_decimator_state += ((flag * x).view(sat_problem._batch_replication, sat_problem._edge_num / sat_problem._batch_replication, -1).sum(dim=0),)
+
+        function_prediction = None
         if prediction[1] is not None:
-            function_flag = torch.mm(sat_problem._batch_mask_tuple[2], batch_flag).squeeze(1) > 0
-        else:
-            function_flag = None
+            flag = torch.mm(sat_problem._batch_mask_tuple[2], batch_flag)
+            function_prediction = (flag * prediction[1]).view(sat_problem._batch_replication, -1).sum(dim=0).unsqueeze(1)
 
-        edge_flag = torch.mm(sat_problem._graph_mask_tuple[1], variable_flag).squeeze(1) > 0
-        variable_flag = variable_flag.squeeze(1) > 0
+        return (variable_prediction, function_prediction), new_propagator_state, new_decimator_state
 
-        return edge_flag, variable_flag, function_flag
-
-    def _local_search(self, prediction, sat_problem):
+    def _local_search(self, prediction, sat_problem, batch_replication):
         "Implements the Walk-SAT algorithm for post-processing."
 
         assignment = (prediction[0] > 0.5).float()
@@ -460,7 +442,11 @@ class PropagatorDecimatorSolverBase(nn.Module):
             unsat_examples, unsat_functions = self._compute_energy(assignment, sat_problem)
             unsat_examples = (unsat_examples > 0).float()
 
-            if unsat_examples.sum() == 0:
+            if batch_replication > 1:
+                compact_unsat_examples = 1 - (torch.mm(sat_problem._replication_mask_tuple[1], 1 - unsat_examples) > 0).float()
+                if compact_unsat_examples.sum() == 0:
+                    break
+            elif unsat_examples.sum() == 0:
                 break
 
             delta_energy = self._compute_energy_diff(assignment, sat_problem)
