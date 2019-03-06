@@ -1,7 +1,10 @@
-# Copyright (c) Microsoft. All rights reserved.
-# Licensed under the MIT license. See LICENSE.md file in the project root for full license information.
+"""
+Define various decimators for the PDP framework.
+"""
 
-# pdp_decimate.py : Defines various decimators for the PDP framework.
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE.md file
+# in the project root for full license information.
 
 import torch
 import torch.nn as nn

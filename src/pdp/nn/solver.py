@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from pdp.nn import propagate, decimate, predict, solver, util
+from pdp.nn import pdp_propagate, pdp_decimate, pdp_predict, util
 
 
 ###############################################################
