@@ -1,11 +1,16 @@
-# Copyright (c) Microsoft. All rights reserved.
-# Licensed under the MIT license. See LICENSE.md file in the project root for full license information.
+#!/usr/bin/env python3
+"""
+Various types of CNF generators for generating real-time CNF instances.
+"""
 
-# generators.py : Defines various types of CNF generators for generating real-time CNF instances.
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE.md file
+# in the project root for full license information.
 
 import numpy as np
 import argparse
 import os, sys
+
 
 def is_sat(_var_num, iclause_list):
     ## Note: Invoke your SAT solver of choice here for generating labeled data.

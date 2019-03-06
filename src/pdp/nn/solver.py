@@ -9,7 +9,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from model_pytorch.PDP import pdp_propagate, pdp_decimate, pdp_predict, util
+from pdp.nn import pdp_propagate, pdp_decimate, pdp_predict, util
+
 
 ###############################################################
 ### The Problem Class

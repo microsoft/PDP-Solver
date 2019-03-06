@@ -10,8 +10,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import sys
 
-from model_pytorch import factor_graph_trainer
-from model_pytorch.PDP import solver, util
+from pdp.factorgraph import FactorGraphTrainerBase
+from pdp.nn import solver, util
 
 
 ##########################################################################################################################
@@ -31,7 +31,7 @@ class Perceptron(nn.Module):
 
 ##########################################################################################################################
 
-class SatFactorGraphTrainer(factor_graph_trainer.FactorGraphTrainerBase):
+class SatFactorGraphTrainer(FactorGraphTrainerBase):
     "Implements a factor graph trainer for various types of PDP SAT solvers."
 
     def __init__(self, config, use_cuda, logger):
