@@ -150,7 +150,7 @@ class FactorGraphTrainerBase:
                     edge_feature, graph_feat, label):
 
         optimizer.zero_grad()
-        lambda_value = torch.tensor([self._config['lambda']], device=self._device)
+        lambda_value = torch.tensor([self._config['lambda']], dtype=torch.float32, device=self._device)
 
         for (i, model) in enumerate(self._model_list):
 

@@ -28,6 +28,7 @@ class NeuralPredictor(nn.Module):
 
         self._variable_classifier = variable_classifier
         self._function_classifier = function_classifier
+        self._hidden_dimension = decimator_dimension
 
         if variable_classifier is not None:
             self._variable_aggregator = util.MessageAggregator(device, decimator_dimension + edge_dimension + meta_data_dimension, 
@@ -88,6 +89,19 @@ class NeuralPredictor(nn.Module):
             function_prediction = self._function_classifier(aggregated_function_state)
 
         return variable_prediction, function_prediction
+
+    def get_init_state(self, graph_map, batch_variable_map, batch_function_map, edge_feature, graph_feat, randomized, batch_replication):
+
+        edge_num = graph_map.size(1) * batch_replication
+
+        if randomized:
+            variable_state = 2.0*torch.rand(edge_num, self._hidden_dimension, dtype=torch.float32, device=self._device) - 1.0
+            function_state = 2.0*torch.rand(edge_num, self._hidden_dimension, dtype=torch.float32, device=self._device) - 1.0
+        else:
+            variable_state = torch.zeros(edge_num, self._hidden_dimension, dtype=torch.float32, device=self._device)
+            function_state = torch.zeros(edge_num, self._hidden_dimension, dtype=torch.float32, device=self._device)
+
+        return (variable_state, function_state)
 
 
 ###############################################################

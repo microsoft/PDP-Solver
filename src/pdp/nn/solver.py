@@ -23,6 +23,7 @@ class SATProblem(object):
         self._device = device
         self._batch_replication = batch_replication
         self.setup_problem(data_batch, batch_replication)
+        self._edge_mask = None
 
     def setup_problem(self, data_batch, batch_replication):
         "Setup the problem properties as well as the relevant sparse matrices."
