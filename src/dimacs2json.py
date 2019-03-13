@@ -96,14 +96,13 @@ def convert_directory(dimacs_dir, output_file, propagate, only_positive=False):
 
     with open(output_file, 'w') as f:
         for i in range(len(file_list)):
-            if (splitext(file_list[i])[1]).lower() != '.dimacs':
+            name, ext = splitext(file_list[i])
+            ext = ext.lower()
+
+            if ext != '.dimacs' and ext != '.cnf':
                 continue
 
-            if len(file_list[i]) < 8:
-                label = -1
-            else:
-                temp = file_list[i][-8]
-                label = float(temp) if temp.isdigit() else -1
+            label = float(name[-1]) if name[-1].isdigit() else -1
 
             if only_positive and label == 0:
                 continue
