@@ -40,7 +40,7 @@ Run:
 
 # Usage
 
-The SATYR solvers can be used in two main modes: (1) apply an already-trained model ot non-ML algorithm to test data, and (2) train/test new models.
+The SATYR solvers can be used in two main modes: (1) apply an already-trained model or non-ML algorithm to test data, and (2) train/test new models.
 
 ## Running a (Trained) SATYR Solver
 
