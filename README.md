@@ -2,7 +2,7 @@
 
 The PDP framework is a generic framework based on the idea of Propagation, Decimation and Prediction (PDP) for learning and implementing message passing-based solvers for constraint satisfaction problems (CSP). In particular, it provides an elegant unsupervised framework for training neural solvers based on the idea of energy minimization. Our SAT solver adaptation of the PDP framework, referred as **SATYR**, supports a wide spectrum of solvers from fully neural architectures to classical inference-based techniques (such as Survey Propagation) with hybrid methods in between. For further theoretical details of the framework, please refer to our paper:
 
-**Saeed Amizadeh, Sergiy Matusevych and Markus Weimer, [PDP: A General Neural Framework for Learning Constraint Satisfaction Solvers](https://arxiv.org/abs/1903.01969), arXiv preprint arXiv:1903.01969, 2019.** [[Video]](https://www.youtube.com/watch?v=PwuCc7Lylww&ab_channel=CP2020)
+**Saeed Amizadeh, Sergiy Matusevych and Markus Weimer, [PDP: A General Neural Framework for Learning Constraint Satisfaction Solvers](https://arxiv.org/abs/1903.01969), arXiv preprint arXiv:1903.01969, 2019.** [**[Video]**](https://www.youtube.com/watch?v=PwuCc7Lylww&ab_channel=CP2020)
 
 ```
 @article{amizadeh2019pdp,
