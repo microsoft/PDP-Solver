@@ -35,7 +35,7 @@ It should be noted that all the SATYR solvers try to find a satisfying assignmen
 Run:
 
 ```
-> python setup.py
+> python setup.py install
 ```
 
 # Usage
